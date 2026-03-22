@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local dev servers
+.cache/
+
+# Others
+.env
+*.log
+node_modules/
+dist/
+build/
+coverage/
+*.zip
+*.tar.gz
+*.bak
+*.tmp
