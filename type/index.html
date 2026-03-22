@@ -112,11 +112,23 @@
     #keyboard {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
       gap: 10px;
       padding: 10px 12px 14px;
       background: rgba(255,255,255,0.04);
       border-top: 2px solid rgba(255,255,255,0.08);
       backdrop-filter: blur(8px);
+    }
+
+    @media (max-width: 700px) {
+      #keyboard {
+        max-width: 100%;
+        width: 100%;
+        gap: 8px;
+        padding: 8px 10px 12px;
+      }
     }
 
     .key {
@@ -211,8 +223,9 @@
     <button class="key" data-n="7">7</button>
     <button class="key" data-n="8">8</button>
     <button class="key" data-n="9">9</button>
+    <div></div>
     <button class="key" data-n="0">0</button>
-    <button class="key clear" style="grid-column: span 2;">✕ Clear</button>
+    <button class="key clear" style="grid-column: span 1;">✕ Clear</button>
   </div>
 </div>
 
