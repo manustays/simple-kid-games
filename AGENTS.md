@@ -99,10 +99,29 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  if (!e.request.url.startsWith(self.location.origin)) return;
-  e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
-  );
+  if (e.request.method !== 'GET' || !e.request.url.startsWith(self.location.origin)) return;
+  e.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+
+    try {
+      const response = await fetch(e.request);
+
+      if (response.ok && response.type === 'basic') {
+        cache.put(e.request, response.clone());
+      }
+
+      return response;
+    } catch (error) {
+      const cached = await cache.match(e.request);
+      if (cached) return cached;
+
+      if (e.request.mode === 'navigate') {
+        return cache.match('./index.html');
+      }
+
+      throw error;
+    }
+  })());
 });
 ```
 
@@ -110,6 +129,7 @@ Rules:
 - The cache name must be unique per activity: `<activity-name>-v1`.
 - Do not fetch or cache anything from external origins inside the SW.
 - If the activity gains new files, add them to the `ASSETS` array.
+- Use a network-first strategy so published updates load when online and the cache is only used as an offline fallback.
 
 ---
 
@@ -138,7 +158,9 @@ Rules:
 ```html
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js');
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(registration => {
+      registration.update();
+    });
   }
 </script>
 </body>
@@ -224,7 +246,7 @@ These rules exist because the audience is toddlers (age 1–4) using a phone or 
 Study `type/` before writing a new activity — it demonstrates all the patterns above:
 - Inline CSS + JS in one `index.html`
 - `manifest.json` with correct `scope` and `start_url`
-- `sw.js` with cache-first strategy
+- `sw.js` with a network-first strategy and offline fallback
 - Large colorful buttons with `pointerdown` handling, ripple, and burst animations
 - `clamp()`-based font sizing
 - Web Audio API tones on tap

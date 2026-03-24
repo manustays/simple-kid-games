@@ -50,7 +50,7 @@ simple-kid-games/
 └── type/                   ← one folder per activity
     ├── index.html          ← self-contained entry point; registers sw.js
     ├── manifest.json       ← PWA manifest (scope + start_url + icons)
-    └── sw.js               ← cache-first service worker (offline support)
+    └── sw.js               ← network-first service worker with offline fallback
 ```
 
 ## Running Locally
@@ -72,7 +72,7 @@ Then open `http://localhost:8080/`.
 1. Create a new subfolder (e.g. `colors/`, `shapes/`, `alphabet/`).
 2. Add `index.html` — fully self-contained; link to `manifest.json` and register `sw.js`.
 3. Add `manifest.json` — include `"scope": "./"` and `"display": "fullscreen"`.
-4. Add `sw.js` — cache-first service worker (copy the pattern from [`type/sw.js`](type/sw.js) and update the cache name).
+4. Add `sw.js` — network-first service worker with offline fallback (copy the pattern from [`type/sw.js`](type/sw.js) and update the cache name).
 5. Add a card to the root [`index.html`](index.html) launcher.
 6. Add a row to the **Activities** table in this README.
 
