@@ -9,10 +9,18 @@
   "background_color": "#0f0a1e",
   "theme_color": "#1a0533",
   "icons": [
+        { "src": "./public/favicon.ico", "type": "image/x-icon", "sizes": "16x16 32x32" },
+        { "src": "./public/icon-192.png", "type": "image/png", "sizes": "192x192" },
+        { "src": "./public/icon-512.png", "type": "image/png", "sizes": "512x512" },
+        { "src": "./public/icon-192-maskable.png", "type": "image/png", "sizes": "192x192", "purpose": "maskable" },
+        { "src": "./public/icon-512-maskable.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+      ],
+  "screenshots": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='32' fill='%230f0a1e'/><text x='96' y='135' font-size='120' text-anchor='middle' fill='%23ff4d6d'>1</text></svg>",
-      "sizes": "192x192",
-      "type": "image/svg+xml"
+      "src": "./public/screenshot.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "label": "Number Fun gameplay screenshot"
     }
   ]
 }
