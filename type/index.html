@@ -177,6 +177,9 @@
     .key[data-n="0"]  { background: linear-gradient(135deg, #b2f7ef, #3dbfb3); }
     .key.clear        { background: linear-gradient(135deg, #444, #222); font-size: clamp(18px, 4vw, 32px); letter-spacing: -0.5px; }
     .key.clear:active { transform: scale(0.92) translateY(3px); }
+    .key.speech       { background: linear-gradient(135deg, #ffd60a, #ffc300); color: #333; font-size: clamp(16px, 4vw, 28px); letter-spacing: -0.5px; }
+    .key.speech.off   { background: linear-gradient(135deg, #999, #666); color: #fff; }
+    .key.speech:active { transform: scale(0.92) translateY(3px); }
 
     /* 0 and clear span full row nicely */
     .key[data-n="0"] { grid-column: span 1; }
@@ -223,7 +226,7 @@
     <button class="key" data-n="7">7</button>
     <button class="key" data-n="8">8</button>
     <button class="key" data-n="9">9</button>
-    <div></div>
+    <button class="key speech" id="speech-btn">🔊 On</button>
     <button class="key" data-n="0">0</button>
     <button class="key clear" style="grid-column: span 1;">✕ Clear</button>
   </div>
@@ -233,6 +236,28 @@
   const wrap = document.getElementById('digits-wrap');
   const emojis = ['🌟','🎉','✨','💫','🎈','🦄','🌈','🍭','🎊','⭐'];
   const MAX = 60;
+  let speechEnabled = localStorage.getItem('speech-enabled') !== 'false';
+  const speechBtn = document.getElementById('speech-btn');
+  const synth = window.speechSynthesis;
+
+  function updateSpeechButton() {
+    if (speechEnabled) {
+      speechBtn.textContent = '🔊 On';
+      speechBtn.classList.remove('off');
+    } else {
+      speechBtn.textContent = '🔇 Off';
+      speechBtn.classList.add('off');
+    }
+  }
+
+  function speakDigit(digit) {
+    if (!speechEnabled || !synth) return;
+    synth.cancel();
+    const utterance = new SpeechSynthesisUtterance(digit);
+    utterance.rate = 0.9;
+    utterance.pitch = 1.2;
+    synth.speak(utterance);
+  }
 
   function addDigit(n) {
     if (wrap.children.length >= MAX) {
@@ -243,6 +268,7 @@
     el.textContent = n;
     wrap.appendChild(el);
     wrap.scrollTop = wrap.scrollHeight;
+    speakDigit(n);
   }
 
   function clearAll() {
@@ -271,6 +297,14 @@
     ripple.addEventListener('animationend', () => ripple.remove());
   }
 
+  speechBtn.addEventListener('pointerdown', e => {
+    speechEnabled = !speechEnabled;
+    localStorage.setItem('speech-enabled', speechEnabled);
+    updateSpeechButton();
+    addRipple(speechBtn, e.clientX, e.clientY);
+    spawnBurst(e.clientX, e.clientY);
+  });
+
   document.getElementById('keyboard').addEventListener('pointerdown', e => {
     const btn = e.target.closest('.key');
     if (!btn) return;
@@ -290,6 +324,9 @@
     if (e.key >= '0' && e.key <= '9') addDigit(e.key);
     if (e.key === 'Backspace' || e.key === 'Delete') clearAll();
   });
+
+  // Initialize speech button state
+  updateSpeechButton();
 
   // Register service worker for offline / PWA install
   if ('serviceWorker' in navigator) {
