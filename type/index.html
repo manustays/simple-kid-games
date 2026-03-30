@@ -332,6 +332,17 @@
     }
     .lkey-voice.off { color: rgba(255,255,255,0.3); }
 
+    /* clear button: same width as voice btn */
+    .lkey-clear {
+      width: calc(var(--lkw) * 2 + 6px);
+      flex: 0 0 calc(var(--lkw) * 2 + 6px);
+      background: #2a2a2c;
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
     #panel-emoji {
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
@@ -532,6 +543,10 @@
     spaceBtn.dataset.char = ' ';
     spaceBtn.textContent = 'space';
     spaceRow.appendChild(spaceBtn);
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'lkey lkey-clear';
+    clearBtn.textContent = 'clear';
+    spaceRow.appendChild(clearBtn);
     kb.appendChild(spaceRow);
 
     kb.addEventListener('pointerdown', e => {
@@ -542,6 +557,10 @@
         speechEnabled = !speechEnabled;
         localStorage.setItem('speech-enabled', speechEnabled);
         updateSpeechButton();
+        return;
+      }
+      if (btn.classList.contains('lkey-clear')) {
+        wrap.innerHTML = '';
         return;
       }
       const ch = btn.dataset.char;
