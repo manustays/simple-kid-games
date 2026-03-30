@@ -1,7 +1,7 @@
 {
-  "name": "Number Fun!",
-  "short_name": "NumFun",
-  "description": "A fun number typing app for toddlers",
+  "name": "Typing Fun!",
+  "short_name": "TypeFun!",
+  "description": "A fun typing app for toddlers: numbers, letters, and emojies! Colorful, interactive, and educational. Perfect for little learners to explore the world of typing while having fun!",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
