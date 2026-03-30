@@ -17,6 +17,8 @@
 
     :root {
       --bg: #0f0a1e;
+      /* letter key width: fits 10 keys + 9×6px gaps across the keyboard */
+      --lkw: clamp(28px, calc((100vw - 16px - 54px) / 10), 42px);
       --c1: #ff4d6d;
       --c2: #ff9f1c;
       --c3: #2ec4b6;
@@ -110,7 +112,16 @@
     .digit-char:nth-child(10n+9)  { color: var(--c9); }
     .digit-char:nth-child(10n+0)  { color: var(--c0); }
 
-    /* ── Keyboard ── */
+    /* ── Keyboard panel ── */
+    #panels {
+      background: rgba(255,255,255,0.04);
+      border-top: 2px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(8px);
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
     #keyboard {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -119,9 +130,6 @@
       margin-right: auto;
       gap: 10px;
       padding: 10px 12px 14px;
-      background: rgba(255,255,255,0.04);
-      border-top: 2px solid rgba(255,255,255,0.08);
-      backdrop-filter: blur(8px);
     }
 
     @media (max-width: 700px) {
@@ -131,6 +139,56 @@
         gap: 8px;
         padding: 8px 10px 12px;
       }
+    }
+
+    /* ── Tab bar ── */
+    #tab-bar {
+      display: flex;
+      background: rgba(0,0,0,0.45);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 8px 4px;
+      color: rgba(255,255,255,0.3);
+      border: none;
+      background: none;
+      outline: none;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: color 0.15s;
+      position: relative;
+    }
+
+    .tab.active {
+      color: rgba(255,255,255,0.88);
+    }
+
+    .tab.active::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 20%; right: 20%;
+      height: 2px;
+      background: rgba(255,255,255,0.55);
+      border-radius: 0 0 2px 2px;
+    }
+
+    .tab-icon { font-size: 20px; line-height: 1; }
+
+    .tab-label {
+      font-family: 'Nunito', sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
     }
 
     .key {
@@ -211,6 +269,60 @@
       0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
       100% { transform: translate(-50%, -200%) scale(1.4); opacity: 0; }
     }
+
+    /* ── ABC keyboard (Gboard dark) ── */
+    #keyboard-letters {
+      padding: 10px 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .letter-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .lkey {
+      width: var(--lkw);
+      flex: 0 0 var(--lkw);
+      height: 42px;
+      border-radius: 5px;
+      border: none;
+      background: #3a3a3c;
+      color: rgba(255,255,255,0.92);
+      font-family: 'Nunito', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06);
+      transition: filter 0.06s, transform 0.06s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .lkey:active {
+      filter: brightness(1.6);
+      transform: scale(0.9);
+    }
+
+    /* space bar: 5 key widths + 4 inner gaps */
+    .lkey-space {
+      width: calc(var(--lkw) * 5 + 24px);
+      flex: 0 0 calc(var(--lkw) * 5 + 24px);
+      background: #2a2a2c;
+      color: rgba(255,255,255,0.3);
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
   </style>
 </head>
 <body>
@@ -218,19 +330,41 @@
   <div id="display">
     <div id="digits-wrap"></div>
   </div>
-  <div id="keyboard">
-    <button class="key" data-n="1">1</button>
-    <button class="key" data-n="2">2</button>
-    <button class="key" data-n="3">3</button>
-    <button class="key" data-n="4">4</button>
-    <button class="key" data-n="5">5</button>
-    <button class="key" data-n="6">6</button>
-    <button class="key" data-n="7">7</button>
-    <button class="key" data-n="8">8</button>
-    <button class="key" data-n="9">9</button>
-    <button class="key speech" id="speech-btn">🔊 On</button>
-    <button class="key" data-n="0">0</button>
-    <button class="key clear" style="grid-column: span 1;">✕ Clear</button>
+  <div id="panels">
+    <div id="panel-numbers" class="panel active">
+      <div id="keyboard">
+        <button class="key" data-n="1">1</button>
+        <button class="key" data-n="2">2</button>
+        <button class="key" data-n="3">3</button>
+        <button class="key" data-n="4">4</button>
+        <button class="key" data-n="5">5</button>
+        <button class="key" data-n="6">6</button>
+        <button class="key" data-n="7">7</button>
+        <button class="key" data-n="8">8</button>
+        <button class="key" data-n="9">9</button>
+        <button class="key speech" id="speech-btn">🔊 On</button>
+        <button class="key" data-n="0">0</button>
+        <button class="key clear" style="grid-column: span 1;">✕ Clear</button>
+      </div>
+    </div>
+    <div id="panel-letters" class="panel">
+      <div id="keyboard-letters"></div>
+    </div>
+  </div>
+
+  <div id="tab-bar">
+    <button class="tab active" data-tab="numbers">
+      <span class="tab-icon">🔢</span>
+      <span class="tab-label">Numbers</span>
+    </button>
+    <button class="tab" data-tab="emoji">
+      <span class="tab-icon">😊</span>
+      <span class="tab-label">Emoji</span>
+    </button>
+    <button class="tab" data-tab="letters">
+      <span class="tab-icon">🔤</span>
+      <span class="tab-label">ABC</span>
+    </button>
   </div>
 </div>
 
@@ -255,7 +389,8 @@
   function speakDigit(digit) {
     if (!speechEnabled || !synth) return;
     synth.cancel();
-    const utterance = new SpeechSynthesisUtterance(digit);
+    const _digit = ('' + digit).toLowerCase();
+    const utterance = new SpeechSynthesisUtterance(_digit);
     utterance.rate = 0.9;
     utterance.pitch = 1.2;
     synth.speak(utterance);
@@ -321,14 +456,83 @@
     }
   });
 
-  // Physical keyboard support
+  // Build ABC keyboard
+  (function() {
+    const rows = [
+      ['Q','W','E','R','T','Y','U','I','O','P'],
+      ['A','S','D','F','G','H','J','K','L'],
+      ['Z','X','C','V','B','N','M'],
+    ];
+    const kb = document.getElementById('keyboard-letters');
+    rows.forEach(letters => {
+      const row = document.createElement('div');
+      row.className = 'letter-row';
+      letters.forEach(ch => {
+        const btn = document.createElement('button');
+        btn.className = 'lkey';
+        btn.dataset.char = ch;
+        btn.textContent = ch;
+        row.appendChild(btn);
+      });
+      kb.appendChild(row);
+    });
+    const spaceRow = document.createElement('div');
+    spaceRow.className = 'letter-row';
+    const spaceBtn = document.createElement('button');
+    spaceBtn.className = 'lkey lkey-space';
+    spaceBtn.dataset.char = ' ';
+    spaceBtn.textContent = 'space';
+    spaceRow.appendChild(spaceBtn);
+    kb.appendChild(spaceRow);
+
+    kb.addEventListener('pointerdown', e => {
+      const btn = e.target.closest('.lkey');
+      if (!btn) return;
+      addRipple(btn, e.clientX, e.clientY);
+      const ch = btn.dataset.char;
+      if (ch === ' ') {
+        // Add a visible gap without triggering speech
+        if (wrap.children.length >= MAX) wrap.removeChild(wrap.firstChild);
+        const el = document.createElement('span');
+        el.className = 'digit-char';
+        el.textContent = '\u00A0';
+        wrap.appendChild(el);
+      } else if (ch) {
+        spawnBurst(e.clientX, e.clientY);
+        addDigit(ch);
+      }
+    });
+  })();
+
+  // Physical keyboard support (tab-aware)
   document.addEventListener('keydown', e => {
-    if (e.key >= '0' && e.key <= '9') addDigit(e.key);
-    if (e.key === 'Backspace' || e.key === 'Delete') clearAll();
+    const activeTab = document.querySelector('.tab.active')?.dataset.tab;
+    if (activeTab === 'letters') {
+      if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) addDigit(e.key.toUpperCase());
+      if (e.key === ' ') {
+        if (wrap.children.length >= MAX) wrap.removeChild(wrap.firstChild);
+        const el = document.createElement('span');
+        el.className = 'digit-char';
+        el.textContent = '\u00A0';
+        wrap.appendChild(el);
+      }
+    } else {
+      if (e.key >= '0' && e.key <= '9') addDigit(e.key);
+      if (e.key === 'Backspace' || e.key === 'Delete') clearAll();
+    }
   });
 
   // Initialize speech button state
   updateSpeechButton();
+
+  // Tab bar switching
+  document.getElementById('tab-bar').addEventListener('pointerdown', e => {
+    const tab = e.target.closest('.tab');
+    if (!tab) return;
+    const tabName = tab.dataset.tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + tabName));
+  });
 
   // Register service worker for offline / PWA install
   if ('serviceWorker' in navigator) {
