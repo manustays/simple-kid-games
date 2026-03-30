@@ -618,7 +618,19 @@
       kb.appendChild(btn);
     });
 
+    let ekeyStartX = 0, ekeyStartY = 0, ekeyScrolled = false;
     kb.addEventListener('pointerdown', ev => {
+      ekeyStartX = ev.clientX;
+      ekeyStartY = ev.clientY;
+      ekeyScrolled = false;
+    });
+    kb.addEventListener('pointermove', ev => {
+      if (Math.abs(ev.clientX - ekeyStartX) > 8 || Math.abs(ev.clientY - ekeyStartY) > 8) {
+        ekeyScrolled = true;
+      }
+    });
+    kb.addEventListener('pointerup', ev => {
+      if (ekeyScrolled) return;
       const btn = ev.target.closest('.ekey');
       if (!btn) return;
       spawnBurst(ev.clientX, ev.clientY);
