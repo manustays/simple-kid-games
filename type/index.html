@@ -313,16 +313,52 @@
       transform: scale(0.9);
     }
 
-    /* space bar: 5 key widths + 4 inner gaps */
+    /* space bar: 3 key widths + 2 inner gaps (voice btn takes the other 2 keys) */
     .lkey-space {
-      width: calc(var(--lkw) * 5 + 24px);
-      flex: 0 0 calc(var(--lkw) * 5 + 24px);
+      width: calc(var(--lkw) * 3 + 12px);
+      flex: 0 0 calc(var(--lkw) * 3 + 12px);
       background: #2a2a2c;
       color: rgba(255,255,255,0.3);
       font-size: 11px;
       letter-spacing: 1.5px;
       text-transform: uppercase;
     }
+
+    /* voice toggle: 2 key widths + 1 gap */
+    .lkey-voice {
+      width: calc(var(--lkw) * 2 + 6px);
+      flex: 0 0 calc(var(--lkw) * 2 + 6px);
+      font-size: 18px;
+    }
+    .lkey-voice.off { color: rgba(255,255,255,0.3); }
+
+    #panel-emoji {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      max-height: 55vh;
+    }
+
+    #keyboard-emoji {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(clamp(52px, 13vw, 76px), 1fr));
+      gap: 2px;
+      padding: 8px 10px 12px;
+    }
+
+    .ekey {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: clamp(36px, 9vw, 56px);
+      line-height: 1;
+      padding: 6px 2px;
+      touch-action: manipulation;
+      border-radius: 8px;
+      text-align: center;
+      transition: transform 0.1s cubic-bezier(0.36, 1.56, 0.64, 1);
+    }
+
+    .ekey:active { transform: scale(0.82); }
   </style>
 </head>
 <body>
@@ -349,6 +385,9 @@
     </div>
     <div id="panel-letters" class="panel">
       <div id="keyboard-letters"></div>
+    </div>
+    <div id="panel-emoji" class="panel">
+      <div id="keyboard-emoji"></div>
     </div>
   </div>
 
@@ -383,6 +422,11 @@
     } else {
       speechBtn.textContent = '🔇 Off';
       speechBtn.classList.add('off');
+    }
+    const lBtn = document.getElementById('letters-speech-btn');
+    if (lBtn) {
+      lBtn.textContent = speechEnabled ? '🔊' : '🔇';
+      lBtn.classList.toggle('off', !speechEnabled);
     }
   }
 
@@ -459,9 +503,9 @@
   // Build ABC keyboard
   (function() {
     const rows = [
-      ['Q','W','E','R','T','Y','U','I','O','P'],
-      ['A','S','D','F','G','H','J','K','L'],
-      ['Z','X','C','V','B','N','M'],
+      ['A','B','C','D','E','F','G','H','I','J'],
+      ['K','L','M','N','O','P','Q','R','S'],
+      ['T','U','V','W','X','Y','Z'],
     ];
     const kb = document.getElementById('keyboard-letters');
     rows.forEach(letters => {
@@ -478,6 +522,10 @@
     });
     const spaceRow = document.createElement('div');
     spaceRow.className = 'letter-row';
+    const voiceBtn = document.createElement('button');
+    voiceBtn.className = 'lkey lkey-voice';
+    voiceBtn.id = 'letters-speech-btn';
+    spaceRow.appendChild(voiceBtn);
     const spaceBtn = document.createElement('button');
     spaceBtn.className = 'lkey lkey-space';
     spaceBtn.dataset.char = ' ';
@@ -489,6 +537,12 @@
       const btn = e.target.closest('.lkey');
       if (!btn) return;
       addRipple(btn, e.clientX, e.clientY);
+      if (btn.classList.contains('lkey-voice')) {
+        speechEnabled = !speechEnabled;
+        localStorage.setItem('speech-enabled', speechEnabled);
+        updateSpeechButton();
+        return;
+      }
       const ch = btn.dataset.char;
       if (ch === ' ') {
         // Add a visible gap without triggering speech
@@ -500,6 +554,81 @@
       } else if (ch) {
         spawnBurst(e.clientX, e.clientY);
         addDigit(ch);
+      }
+    });
+  })();
+
+  // Build Emoji keyboard
+  (function() {
+    const emojiData = [
+      // Vehicles
+      { e: '🚌', n: 'bus' }, { e: '🚎', n: 'trolleybus' }, { e: '🚐', n: 'minibus' },
+      { e: '🚑', n: 'ambulance' }, { e: '🚒', n: 'fire truck' }, { e: '🚓', n: 'police car' },
+      { e: '🚗', n: 'car' }, { e: '🚕', n: 'taxi' }, { e: '🚙', n: 'jeep' },
+      { e: '🏎️', n: 'racing car' }, { e: '🚚', n: 'truck' }, { e: '🚛', n: 'garbage truck' },
+      { e: '🚜', n: 'tractor' }, { e: '🏗️', n: 'crane' }, { e: '🚲', n: 'bicycle' },
+      { e: '🛵', n: 'scooter' }, { e: '🏍️', n: 'motorcycle' }, { e: '✈️', n: 'airplane' },
+      { e: '🚁', n: 'helicopter' }, { e: '🚀', n: 'rocket' }, { e: '⛵', n: 'sailboat' },
+      { e: '🚤', n: 'speedboat' }, { e: '🚢', n: 'ship' }, { e: '🚂', n: 'train' },
+      { e: '🚇', n: 'subway' }, { e: '🛺', n: 'auto rickshaw' },
+      // Animals
+      { e: '🦁', n: 'lion' }, { e: '🐘', n: 'elephant' }, { e: '🐨', n: 'koala' },
+      { e: '🐱', n: 'cat' }, { e: '🐶', n: 'dog' }, { e: '🐯', n: 'tiger' },
+      { e: '🦌', n: 'deer' }, { e: '🐄', n: 'cow' }, { e: '🐋', n: 'whale' },
+      { e: '🦀', n: 'crab' }, { e: '🐙', n: 'octopus' }, { e: '🐐', n: 'goat' },
+      { e: '🦕', n: 'dinosaur' }, { e: '🦖', n: 'T-Rex' }, { e: '🦒', n: 'giraffe' },
+      { e: '🦓', n: 'zebra' }, { e: '🐻', n: 'bear' }, { e: '🐼', n: 'panda' },
+      { e: '🐸', n: 'frog' }, { e: '🐢', n: 'turtle' }, { e: '🐬', n: 'dolphin' },
+      { e: '🦈', n: 'shark' }, { e: '🦋', n: 'butterfly' }, { e: '🐝', n: 'bee' },
+      { e: '🦜', n: 'parrot' }, { e: '🐧', n: 'penguin' }, { e: '🦘', n: 'kangaroo' },
+      { e: '🐊', n: 'crocodile' }, { e: '🦏', n: 'rhinoceros' }, { e: '🦛', n: 'hippo' },
+      { e: '🐪', n: 'camel' }, { e: '🦙', n: 'llama' }, { e: '🐺', n: 'wolf' },
+      { e: '🦊', n: 'fox' }, { e: '🐰', n: 'rabbit' }, { e: '🐔', n: 'chicken' },
+      { e: '🐷', n: 'pig' }, { e: '🐴', n: 'horse' }, { e: '🦩', n: 'flamingo' },
+      { e: '🦦', n: 'otter' }, { e: '🦥', n: 'sloth' },
+      // Fruits & healthy food
+      { e: '🍎', n: 'apple' }, { e: '🍊', n: 'orange' }, { e: '🍋', n: 'lemon' },
+      { e: '🍇', n: 'grapes' }, { e: '🍓', n: 'strawberry' }, { e: '🍒', n: 'cherry' },
+      { e: '🍑', n: 'peach' }, { e: '🍍', n: 'pineapple' }, { e: '🥭', n: 'mango' },
+      { e: '🍌', n: 'banana' }, { e: '🥝', n: 'kiwi' }, { e: '🍉', n: 'watermelon' },
+      { e: '🥥', n: 'coconut' }, { e: '🍐', n: 'pear' }, { e: '🫐', n: 'blueberries' },
+      { e: '🥦', n: 'broccoli' }, { e: '🥕', n: 'carrot' }, { e: '🌽', n: 'corn' },
+      { e: '🍅', n: 'tomato' }, { e: '🥑', n: 'avocado' },
+      // Other toddler-friendly objects
+      { e: '⚽', n: 'soccer ball' }, { e: '🏀', n: 'basketball' }, { e: '🎈', n: 'balloon' },
+      { e: '🌈', n: 'rainbow' }, { e: '⭐', n: 'star' }, { e: '🌙', n: 'moon' },
+      { e: '☀️', n: 'sun' }, { e: '🌸', n: 'flower' }, { e: '🌻', n: 'sunflower' },
+      { e: '🏠', n: 'house' }, { e: '🌳', n: 'tree' }, { e: '🎨', n: 'paint palette' },
+      { e: '🎵', n: 'music note' }, { e: '🥁', n: 'drum' }, { e: '🎸', n: 'guitar' },
+      { e: '🎺', n: 'trumpet' }, { e: '🌊', n: 'wave' }, { e: '🍄', n: 'mushroom' },
+    ];
+
+    // Fisher-Yates shuffle on every load
+    for (let i = emojiData.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [emojiData[i], emojiData[j]] = [emojiData[j], emojiData[i]];
+    }
+
+    const kb = document.getElementById('keyboard-emoji');
+    emojiData.forEach(({ e, n }) => {
+      const btn = document.createElement('button');
+      btn.className = 'ekey';
+      btn.textContent = e;
+      btn.dataset.name = n;
+      kb.appendChild(btn);
+    });
+
+    kb.addEventListener('pointerdown', ev => {
+      const btn = ev.target.closest('.ekey');
+      if (!btn) return;
+      spawnBurst(ev.clientX, ev.clientY);
+      addDigit(btn.textContent);
+      if (speechEnabled && synth) {
+        synth.cancel();
+        const utt = new SpeechSynthesisUtterance(btn.dataset.name);
+        utt.rate = 0.9;
+        utt.pitch = 1.2;
+        synth.speak(utt);
       }
     });
   })();
