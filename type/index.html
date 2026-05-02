@@ -79,10 +79,10 @@
 
     #digits-wrap {
       display: flex;
-      flex-wrap: wrap;
+      /* flex-wrap: wrap; */
       align-items: center;
-      justify-content: center;
-      gap: 6px;
+      justify-content: flex-end;
+      gap: 26px;
       width: 100%;
     }
 
@@ -346,14 +346,14 @@
     #panel-emoji {
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      max-height: 55vh;
+      max-height: 70vh;
     }
 
     #keyboard-emoji {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(clamp(52px, 13vw, 76px), 1fr));
-      gap: 2px;
-      padding: 8px 10px 12px;
+      gap: 25px;
+      padding: 10px 10px 42px;
     }
 
     .ekey {
@@ -362,7 +362,7 @@
       cursor: pointer;
       font-size: clamp(36px, 9vw, 56px);
       line-height: 1;
-      padding: 6px 2px;
+      padding: 10px 5px;
       touch-action: manipulation;
       border-radius: 8px;
       text-align: center;
@@ -579,6 +579,7 @@
   })();
 
   // Build Emoji keyboard
+  // MARK: Emojies
   (function() {
     const emojiData = [
       // Vehicles
@@ -590,7 +591,9 @@
       { e: '🛵', n: 'scooter' }, { e: '🏍️', n: 'motorcycle' }, { e: '✈️', n: 'airplane' },
       { e: '🚁', n: 'helicopter' }, { e: '🚀', n: 'rocket' }, { e: '⛵', n: 'sailboat' },
       { e: '🚤', n: 'speedboat' }, { e: '🚢', n: 'ship' }, { e: '🚂', n: 'train' },
-      { e: '🚇', n: 'subway' }, { e: '🛺', n: 'auto rickshaw' },
+      { e: '🛺', n: 'auto rickshaw' }, { e: '🛻', n: 'pickup truck' }, { e: '🛩️', n: 'airplane' },
+      { e: '🛞', n: 'wheel' },
+
       // Animals
       { e: '🦁', n: 'lion' }, { e: '🐘', n: 'elephant' }, { e: '🐨', n: 'koala' },
       { e: '🐱', n: 'cat' }, { e: '🐈', n: 'cat' }, { e: '🐶', n: 'dog' },
@@ -606,23 +609,26 @@
       { e: '🦊', n: 'fox' }, { e: '🐰', n: 'rabbit' }, { e: '🐔', n: 'chicken' },
       { e: '🐷', n: 'pig' }, { e: '🐴', n: 'horse' }, { e: '🦩', n: 'flamingo' },
       { e: '🦦', n: 'otter' }, { e: '🦥', n: 'sloth' }, { e: '🐵', n: 'monkey' },
-      { e: '🐒', n: 'monkey' }, { e: '🐯', n: 'tiger' },
+      { e: '🐒', n: 'monkey' }, { e: '🐯', n: 'tiger' }, { e: '🐁', n: 'mouse' },
       // Fruits & healthy food
       { e: '🍎', n: 'apple' }, { e: '🍊', n: 'orange' }, { e: '🍋', n: 'lemon' },
       { e: '🍇', n: 'grapes' }, { e: '🍓', n: 'strawberry' }, { e: '🍒', n: 'cherry' },
       { e: '🍑', n: 'peach' }, { e: '🍍', n: 'pineapple' }, { e: '🥭', n: 'mango' },
       { e: '🍌', n: 'banana' }, { e: '🥝', n: 'kiwi' }, { e: '🍉', n: 'watermelon' },
-      { e: '🥥', n: 'coconut' }, { e: '🍐', n: 'pear' }, { e: '🫐', n: 'blueberries' },
+      { e: '🥥', n: 'coconut' }, { e: '🫐', n: 'blueberries' },
       { e: '🥦', n: 'broccoli' }, { e: '🥕', n: 'carrot' }, { e: '🌽', n: 'corn' },
       { e: '🍅', n: 'tomato' }, { e: '🥑', n: 'avocado' }, { e: '🥚', n: 'egg' },
       // Other toddler-friendly objects
       { e: '⚽', n: 'football' }, { e: '🏀', n: 'basketball' }, { e: '🎈', n: 'balloon' },
-      { e: '🌈', n: 'rainbow' }, { e: '⭐', n: 'star' }, { e: '🌙', n: 'moon' },
+      { e: '⭐', n: 'star' }, { e: '🌙', n: 'moon' },
       { e: '☀️', n: 'sun' }, { e: '🌸', n: 'flower' }, { e: '🌻', n: 'sunflower' },
       { e: '🏠', n: 'house' }, { e: '🌳', n: 'tree' }, { e: '🥄', n: 'spoon' },
-      { e: '🎵', n: 'music note' }, { e: '🥁', n: 'drum' }, { e: '🎸', n: 'guitar' },
-      { e: '🎺', n: 'trumpet' }, { e: '🌊', n: 'wave' }, { e: '🍄', n: 'mushroom' },
+      { e: '🥁', n: 'drum' }, { e: '🎸', n: 'guitar' },
+      { e: '🎺', n: 'trumpet' }, { e: '🍄', n: 'mushroom' },
       { e: '🔑', n: 'key' }, { e: '🪛', n: 'screwdriver' }, { e: '📖', n: 'book' },
+      { e: '🧳', n: 'suitcase' }, { e: '☂️', n: 'umbrella' },
+      { e: '👕', n: 't-shirt' }, { e: '🧦', n: 'socks' }, { e: '🩴', n: 'slippers' },
+      { e: '👟', n: 'shoes' }, { e: '🪣', n: 'bucket' }, { e: '🪥', n: 'toothbrush' }
     ];
 
     // Fisher-Yates shuffle on every load
