@@ -145,8 +145,8 @@
     #tab-bar {
       display: flex;
       background: rgba(0,0,0,0.45);
-      border-top: 1px solid rgba(255,255,255,0.06);
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding-top: env(safe-area-inset-top, 0px);
     }
 
     .tab {
@@ -175,10 +175,10 @@
     .tab.active::before {
       content: '';
       position: absolute;
-      top: 0; left: 20%; right: 20%;
+      bottom: 0; left: 20%; right: 20%;
       height: 2px;
       background: rgba(255,255,255,0.55);
-      border-radius: 0 0 2px 2px;
+      border-radius: 2px 2px 0 0;
     }
 
     .tab-icon { font-size: 20px; line-height: 1; }
@@ -374,6 +374,21 @@
 </head>
 <body>
 <div id="app">
+  <div id="tab-bar">
+    <button class="tab active" data-tab="numbers">
+      <span class="tab-icon">🔢</span>
+      <span class="tab-label">123</span>
+    </button>
+    <button class="tab" data-tab="emoji">
+      <span class="tab-icon">😊</span>
+      <span class="tab-label">Emoji</span>
+    </button>
+    <button class="tab" data-tab="letters">
+      <span class="tab-icon">🔤</span>
+      <span class="tab-label">ABC</span>
+    </button>
+  </div>
+
   <div id="display">
     <div id="digits-wrap"></div>
   </div>
@@ -400,21 +415,6 @@
     <div id="panel-emoji" class="panel">
       <div id="keyboard-emoji"></div>
     </div>
-  </div>
-
-  <div id="tab-bar">
-    <button class="tab active" data-tab="numbers">
-      <span class="tab-icon">🔢</span>
-      <span class="tab-label">123</span>
-    </button>
-    <button class="tab" data-tab="emoji">
-      <span class="tab-icon">😊</span>
-      <span class="tab-label">Emoji</span>
-    </button>
-    <button class="tab" data-tab="letters">
-      <span class="tab-icon">🔤</span>
-      <span class="tab-label">ABC</span>
-    </button>
   </div>
 </div>
 
