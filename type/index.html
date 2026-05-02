@@ -666,7 +666,7 @@
       if (speechEnabled && synth) {
         synth.cancel();
         const utt = new SpeechSynthesisUtterance(btn.dataset.name);
-        utt.rate = 0.7;
+        utt.rate = 0.5;
         utt.pitch = 1.2;
         synth.speak(utt);
       }
