@@ -2,7 +2,7 @@
 
 A collection of simple, pure web-based games and interactive activities for toddlers. No frameworks, no dependencies, no build step — just open and play.
 
-Live at: **https://&lt;username&gt;.github.io/simple-kid-games/**
+Live at: **[https://kids.abhi.am](https://kids.abhi.am)**
 
 ## Philosophy
 
@@ -16,7 +16,7 @@ Live at: **https://&lt;username&gt;.github.io/simple-kid-games/**
 
 | Folder | Name | Description |
 |--------|------|-------------|
-| [`type/`](type/) | Typing Fun! | Learn to speak letters, numbers, emojis, colors, shapes, and more by typing |
+| [`type/`](type/) | Typing Fun! | Learn to speak letters, numbers, objects, colors, shapes, and more by typing |
 
 ## Architecture
 
