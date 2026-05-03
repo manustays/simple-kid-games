@@ -490,7 +490,7 @@
 <script>
   const wrap = document.getElementById('digits-wrap');
   const emojis = ['🌟','🎉','💫','🎈','🦄','🍭','🎊','⭐', '🚚', '🚒', '🚌', '🚗', '🛺', '✈️', '🐒', '🐠'];
-  const MAX = 60;
+  const MAX = 30;
   let speechEnabled = localStorage.getItem('speech-enabled') !== 'false';
   const speechBtn = document.getElementById('speech-btn');
   const synth = window.speechSynthesis;
@@ -819,12 +819,23 @@
   updateSpeechButton();
 
   // Tab bar switching
+  function activateTab(tabName) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + tabName));
+  }
+
+  // Restore last active tab from localStorage
+  const savedTab = localStorage.getItem('active-tab');
+  if (savedTab && ['numbers', 'letters', 'emoji', 'colors'].includes(savedTab)) {
+    activateTab(savedTab);
+  }
+
   document.getElementById('tab-bar').addEventListener('pointerdown', e => {
     const tab = e.target.closest('.tab');
     if (!tab) return;
     const tabName = tab.dataset.tab;
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
-    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + tabName));
+    activateTab(tabName);
+    localStorage.setItem('active-tab', tabName);
   });
 
   // Register service worker for offline / PWA install
