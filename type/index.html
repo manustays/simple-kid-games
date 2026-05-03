@@ -147,6 +147,8 @@
       background: rgba(0,0,0,0.45);
       border-bottom: 1px solid rgba(255,255,255,0.06);
       padding-top: env(safe-area-inset-top, 0px);
+      padding-left: 20px;
+      padding-right: 20px;
     }
 
     .tab {
@@ -510,26 +512,39 @@
     }
   }
 
-  function speakDigit(digit) {
+  function speak(text) {
     if (!speechEnabled || !synth) return;
     synth.cancel();
-    const _digit = ('' + digit).toLowerCase();
-    const utterance = new SpeechSynthesisUtterance(_digit);
-    utterance.rate = 0.9;
-    utterance.pitch = 1.2;
-    synth.speak(utterance);
+    const utt = new SpeechSynthesisUtterance(('' + text).toLowerCase());
+    utt.rate = 0.5;
+    utt.pitch = 1.2;
+    synth.speak(utt);
+  }
+
+  function appendToWrap(el) {
+    if (wrap.children.length >= MAX) wrap.removeChild(wrap.firstChild);
+    wrap.appendChild(el);
+  }
+
+  function toggleSpeech() {
+    speechEnabled = !speechEnabled;
+    localStorage.setItem('speech-enabled', speechEnabled);
+    updateSpeechButton();
+  }
+
+  function addSpace() {
+    const el = document.createElement('span');
+    el.className = 'digit-char';
+    el.textContent = '\u00A0';
+    appendToWrap(el);
   }
 
   function addDigit(n) {
-    if (wrap.children.length >= MAX) {
-      wrap.removeChild(wrap.firstChild);
-    }
     const el = document.createElement('span');
     el.className = 'digit-char';
     el.textContent = n;
-    wrap.appendChild(el);
-    wrap.scrollTop = wrap.scrollHeight;
-    speakDigit(n);
+    appendToWrap(el);
+    speak(n);
   }
 
   function clearAll() {
@@ -559,9 +574,7 @@
   }
 
   speechBtn.addEventListener('pointerdown', e => {
-    speechEnabled = !speechEnabled;
-    localStorage.setItem('speech-enabled', speechEnabled);
-    updateSpeechButton();
+    toggleSpeech();
     addRipple(speechBtn, e.clientX, e.clientY);
     spawnBurst(e.clientX, e.clientY);
   });
@@ -624,23 +637,16 @@
       if (!btn) return;
       addRipple(btn, e.clientX, e.clientY);
       if (btn.classList.contains('lkey-voice')) {
-        speechEnabled = !speechEnabled;
-        localStorage.setItem('speech-enabled', speechEnabled);
-        updateSpeechButton();
+        toggleSpeech();
         return;
       }
       if (btn.classList.contains('lkey-clear')) {
-        wrap.innerHTML = '';
+        clearAll();
         return;
       }
       const ch = btn.dataset.char;
       if (ch === ' ') {
-        // Add a visible gap without triggering speech
-        if (wrap.children.length >= MAX) wrap.removeChild(wrap.firstChild);
-        const el = document.createElement('span');
-        el.className = 'digit-char';
-        el.textContent = '\u00A0';
-        wrap.appendChild(el);
+        addSpace();
       } else if (ch) {
         spawnBurst(e.clientX, e.clientY);
         addDigit(ch);
@@ -740,34 +746,19 @@
       if (!btn) return;
       spawnBurst(ev.clientX, ev.clientY);
       addDigit(btn.textContent);
-      if (speechEnabled && synth) {
-        synth.cancel();
-        const utt = new SpeechSynthesisUtterance(btn.dataset.name);
-        utt.rate = 0.5;
-        utt.pitch = 1.2;
-        synth.speak(utt);
-      }
+      speak(btn.dataset.name);
     });
   })();
 
   // MARK: Colors
   // Add a color square to the display area
   function addColor(name, hex) {
-    if (wrap.children.length >= MAX) {
-      wrap.removeChild(wrap.firstChild);
-    }
     const el = document.createElement('span');
     el.className = 'color-char';
     el.style.backgroundColor = hex;
     el.style.boxShadow = '0 4px 20px ' + hex + '99';
-    wrap.appendChild(el);
-    if (speechEnabled && synth) {
-      synth.cancel();
-      const utt = new SpeechSynthesisUtterance(name);
-      utt.rate = 0.5;
-      utt.pitch = 1.2;
-      synth.speak(utt);
-    }
+    appendToWrap(el);
+    speak(name);
   }
 
   // Build Colors keyboard
@@ -810,11 +801,7 @@
     if (activeTab === 'letters') {
       if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) addDigit(e.key.toUpperCase());
       if (e.key === ' ') {
-        if (wrap.children.length >= MAX) wrap.removeChild(wrap.firstChild);
-        const el = document.createElement('span');
-        el.className = 'digit-char';
-        el.textContent = '\u00A0';
-        wrap.appendChild(el);
+        addSpace();
       }
     } else {
       if (e.key >= '0' && e.key <= '9') addDigit(e.key);
