@@ -8,6 +8,8 @@
 .idea/
 *.swp
 *.swo
+
+# AI Tools
 .claude/worktrees/
 
 # Local dev servers
