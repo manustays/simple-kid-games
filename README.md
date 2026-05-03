@@ -16,7 +16,7 @@ Live at: **https://&lt;username&gt;.github.io/simple-kid-games/**
 
 | Folder | Name | Description |
 |--------|------|-------------|
-| [`type/`](type/) | Number Fun! | Tap or type numbers 0–9; each one pops with color |
+| [`type/`](type/) | Typing Fun! | Learn to speak letters, numbers, emojis, colors, shapes, and more by typing |
 
 ## Architecture
 

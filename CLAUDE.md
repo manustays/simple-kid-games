@@ -37,7 +37,7 @@ simple-kid-games/
 │   └── sw.js           # Network-first service worker scoped to this folder
 ```
 
-The reference implementation is `type/` (Number Fun!). Study it before creating a new activity.
+The reference implementation is `type/` (Typing Fun!). Study it before creating a new activity.
 
 ## Adding a new activity
 
