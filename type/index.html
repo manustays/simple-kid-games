@@ -504,14 +504,6 @@
     if (typeof synth.onvoiceschanged !== 'undefined') {
       synth.onvoiceschanged = () => synth.getVoices();
     }
-    // Fire a silent zero-volume utterance on the very first pointer interaction to
-    // warm up the TTS engine and eliminate the delay on the first real speech call.
-    document.addEventListener('pointerdown', function warmUp() {
-      const utt = new SpeechSynthesisUtterance('');
-      utt.volume = 0;
-      synth.speak(utt);
-      document.removeEventListener('pointerdown', warmUp, { capture: true });
-    }, { capture: true, once: true });
   }
 
   function updateSpeechButton() {
@@ -541,13 +533,17 @@
     }
   }
 
+  let speechTimer = null;
   function speak(text) {
     if (!speechEnabled || !synth) return;
     synth.cancel();
+    clearTimeout(speechTimer);
     const utt = new SpeechSynthesisUtterance(('' + text).toLowerCase());
     utt.rate = 0.5;
     utt.pitch = 1.2;
-    synth.speak(utt);
+    // Defer by one tick: Chrome silently drops speak() called synchronously
+    // after cancel() when there was something in the queue.
+    speechTimer = setTimeout(() => synth.speak(utt), 10);
   }
 
   function appendToWrap(el) {
