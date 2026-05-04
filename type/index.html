@@ -391,7 +391,7 @@
       max-width: 500px;
       margin-left: auto;
       margin-right: auto;
-      gap: 20px 10px;
+      gap: 20px;
       padding: 100px 10px;
     }
 
@@ -493,11 +493,41 @@
   const wrap = document.getElementById('digits-wrap');
   const emojis = ['🌟','🎉','💫','🎈','🦄','🍭','🎊','⭐', '🚚', '🚒', '🚌', '🚗', '🛺', '✈️', '🐒', '🐠'];
   const MAX = 30;
-  let speechEnabled = localStorage.getItem('speech-enabled') !== 'false';
+  const speechSupported = 'speechSynthesis' in window;
+  let speechEnabled = speechSupported && localStorage.getItem('speech-enabled') !== 'false';
   const speechBtn = document.getElementById('speech-btn');
-  const synth = window.speechSynthesis;
+  const synth = speechSupported ? window.speechSynthesis : null;
+
+  // Eagerly trigger async voice loading so voices are ready before the first tap.
+  if (synth) {
+    synth.getVoices();
+    if (typeof synth.onvoiceschanged !== 'undefined') {
+      synth.onvoiceschanged = () => synth.getVoices();
+    }
+    // Fire a silent zero-volume utterance on the very first pointer interaction to
+    // warm up the TTS engine and eliminate the delay on the first real speech call.
+    document.addEventListener('pointerdown', function warmUp() {
+      const utt = new SpeechSynthesisUtterance('');
+      utt.volume = 0;
+      synth.speak(utt);
+      document.removeEventListener('pointerdown', warmUp, { capture: true });
+    }, { capture: true, once: true });
+  }
 
   function updateSpeechButton() {
+    const lBtn = document.getElementById('letters-speech-btn');
+    if (!speechSupported) {
+      // Speech not available in this browser — disable both buttons.
+      [speechBtn, lBtn].forEach(btn => {
+        if (!btn) return;
+        btn.textContent = btn === speechBtn ? '🔇 N/A' : '🔇';
+        btn.classList.add('off');
+        btn.disabled = true;
+        btn.style.opacity = '0.4';
+        btn.style.cursor = 'not-allowed';
+      });
+      return;
+    }
     if (speechEnabled) {
       speechBtn.textContent = '🔊 On';
       speechBtn.classList.remove('off');
@@ -505,7 +535,6 @@
       speechBtn.textContent = '🔇 Off';
       speechBtn.classList.add('off');
     }
-    const lBtn = document.getElementById('letters-speech-btn');
     if (lBtn) {
       lBtn.textContent = speechEnabled ? '🔊' : '🔇';
       lBtn.classList.toggle('off', !speechEnabled);
@@ -527,6 +556,7 @@
   }
 
   function toggleSpeech() {
+    if (!speechSupported) return;
     speechEnabled = !speechEnabled;
     localStorage.setItem('speech-enabled', speechEnabled);
     updateSpeechButton();
