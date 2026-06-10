@@ -152,7 +152,14 @@
       margin-right: auto;
       padding: 10px 12px 14px;
     }
-    #keyboard-native .key { flex: 1; max-width: 240px; }
+    #keyboard-native .key {
+      aspect-ratio: auto;
+      flex: 0 0 auto;
+      min-width: 120px;
+      padding: 14px 28px;
+      font-size: clamp(16px, 4vw, 24px);
+      border-radius: 14px;
+    }
 
     /* ── Keyboard panel ── */
     #panels {
@@ -937,6 +944,35 @@
     e.preventDefault();
     nativeEdit.innerHTML = '';
     nativeEdit.focus();
+  });
+
+  // Fallback: insert pasted images/GIFs inline (clipboard route — works where
+  // the keyboard/OS copies the GIF to the clipboard, e.g. Firefox or desktop).
+  nativeEdit.addEventListener('paste', e => {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type && item.type.startsWith('image/')) {
+        e.preventDefault();
+        const blob = item.getAsFile();
+        if (!blob) continue;
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(blob);
+        nativeEdit.focus();
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount) {
+          const range = sel.getRangeAt(0);
+          range.deleteContents();
+          range.insertNode(img);
+          range.setStartAfter(img);
+          range.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } else {
+          nativeEdit.appendChild(img);
+        }
+      }
+    }
   });
 
   // Register service worker for offline / PWA install
