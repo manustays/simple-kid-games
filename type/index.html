@@ -483,6 +483,142 @@
 
     .ckey:active { transform: scale(0.92) translateY(3px); filter: brightness(1.2); }
     .ckey:active::after { opacity: 1; }
+
+    /* ── Settings gear + overlay ── */
+    #gear-btn {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 4px);
+      right: 4px;
+      z-index: 50;
+      width: 40px; height: 40px;
+      border: none;
+      background: rgba(0,0,0,0.35);
+      color: rgba(255,255,255,0.45);
+      font-size: 20px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+      transition: transform 0.2s, color 0.2s;
+    }
+    #gear-btn:active { transform: scale(0.92); }
+    #gear-btn.holding { transform: scale(1.25) rotate(40deg); color: var(--c9); }
+
+    #settings-overlay {
+      position: fixed; inset: 0;
+      z-index: 100;
+      background: rgba(8,4,18,0.82);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #settings-overlay[hidden] { display: none; }
+
+    #settings-panel {
+      width: 100%;
+      max-width: 420px;
+      max-height: 90vh;
+      overflow-y: auto;
+      background: #1a1030;
+      border: 2px solid rgba(255,255,255,0.10);
+      border-radius: 20px;
+      padding: 18px 20px 22px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+    }
+
+    .settings-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .settings-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 22px;
+      color: #fff;
+    }
+    #settings-close {
+      width: 40px; height: 40px;
+      border: none; border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.7);
+      font-size: 18px;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+      transition: transform 0.08s;
+    }
+    #settings-close:active { transform: scale(0.92); }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 0;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .settings-row label {
+      color: rgba(255,255,255,0.85);
+      font-size: 15px;
+      flex: 0 0 auto;
+    }
+    .settings-row label span {
+      color: var(--c7);
+      font-variant-numeric: tabular-nums;
+    }
+
+    #set-voice {
+      flex: 1 1 auto;
+      min-width: 0;
+      max-width: 60%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: #2a1c45;
+      color: #fff;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .settings-row input[type="range"] {
+      flex: 1 1 auto;
+      min-width: 0;
+      max-width: 55%;
+      accent-color: var(--c5);
+      height: 28px;
+    }
+
+    .set-toggle, .set-test {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 20px;
+      font-family: 'Fredoka One', cursive;
+      font-size: 15px;
+      color: #fff;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+      transition: transform 0.08s;
+    }
+    .set-toggle { background: linear-gradient(135deg, #6aff6a, #27a027); }
+    .set-toggle.off { background: linear-gradient(135deg, #999, #666); }
+    .set-test { background: linear-gradient(135deg, #c77dff, #9b4dca); width: 100%; }
+    .set-toggle:active, .set-test:active { transform: scale(0.94); }
+
+    .set-toggle:disabled, .set-test:disabled,
+    #set-voice:disabled, .settings-row input:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -546,6 +682,41 @@
       </div>
     </div>
   </div>
+
+  <button id="gear-btn" aria-label="Settings">⚙️</button>
+
+  <div id="settings-overlay" hidden>
+    <div id="settings-panel" role="dialog" aria-label="Settings">
+      <div class="settings-header">
+        <span class="settings-title">Settings</span>
+        <button id="settings-close" aria-label="Close">✕</button>
+      </div>
+
+      <div class="settings-row">
+        <label for="set-speech">Speech</label>
+        <button id="set-speech" class="set-toggle" type="button">On</button>
+      </div>
+
+      <div class="settings-row">
+        <label for="set-voice">Voice</label>
+        <select id="set-voice"></select>
+      </div>
+
+      <div class="settings-row">
+        <label for="set-rate">Speed <span id="set-rate-val">0.5</span></label>
+        <input id="set-rate" type="range" min="0.3" max="1.5" step="0.1" value="0.5">
+      </div>
+
+      <div class="settings-row">
+        <label for="set-pitch">Pitch <span id="set-pitch-val">1.2</span></label>
+        <input id="set-pitch" type="range" min="0.5" max="2.0" step="0.1" value="1.2">
+      </div>
+
+      <div class="settings-row">
+        <button id="set-test" class="set-test" type="button">▶ Test voice</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -558,11 +729,23 @@
   const synth = speechSupported ? window.speechSynthesis : null;
 
   // Eagerly trigger async voice loading so voices are ready before the first tap.
-  if (synth) {
-    synth.getVoices();
-    if (typeof synth.onvoiceschanged !== 'undefined') {
-      synth.onvoiceschanged = () => synth.getVoices();
-    }
+  // (onvoiceschanged is wired up inside the Settings block below.)
+  if (synth) synth.getVoices();
+
+  // ── Voice / TTS settings state ──
+  const DEFAULT_RATE = 0.5, DEFAULT_PITCH = 1.2;
+  function clampNum(v, min, max, fb){ return Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fb; }
+  let speechRate     = clampNum(parseFloat(localStorage.getItem('speech-rate')),  0.3, 1.5, DEFAULT_RATE);
+  let speechPitch    = clampNum(parseFloat(localStorage.getItem('speech-pitch')), 0.5, 2.0, DEFAULT_PITCH);
+  let speechVoiceURI = localStorage.getItem('speech-voice') || '';   // '' = auto
+
+  function getAvailableVoices(){ return synth ? synth.getVoices() : []; }
+  // Resolve the SpeechSynthesisVoice to use, with graceful fallback.
+  function resolveVoice(){
+    const v = getAvailableVoices();
+    if (!v.length) return null;
+    if (speechVoiceURI){ const m = v.find(x => x.voiceURI === speechVoiceURI); if (m) return m; }
+    return v.find(x => /^en[-_]US/i.test(x.lang)) || v.find(x => /^en/i.test(x.lang)) || v[0] || null;
   }
 
   function updateSpeechButton() {
@@ -598,8 +781,10 @@
     synth.cancel();
     clearTimeout(speechTimer);
     const utt = new SpeechSynthesisUtterance(('' + text).toLowerCase());
-    utt.rate = 0.5;
-    utt.pitch = 1.2;
+    utt.rate = speechRate;
+    utt.pitch = speechPitch;
+    const vc = resolveVoice();
+    if (vc){ utt.voice = vc; utt.lang = vc.lang; }
     // Defer by one tick: Chrome silently drops speak() called synchronously
     // after cancel() when there was something in the queue.
     speechTimer = setTimeout(() => synth.speak(utt), 10);
@@ -1003,6 +1188,104 @@
       }
     }
   });
+
+  // ── Settings (parent-facing): voice, speed, pitch, speech on/off ──
+  (function() {
+    const overlay    = document.getElementById('settings-overlay');
+    const gearBtn    = document.getElementById('gear-btn');
+    const closeBtn   = document.getElementById('settings-close');
+    const speechTog  = document.getElementById('set-speech');
+    const voiceSel   = document.getElementById('set-voice');
+    const rateInput  = document.getElementById('set-rate');
+    const pitchInput = document.getElementById('set-pitch');
+    const rateVal    = document.getElementById('set-rate-val');
+    const pitchVal   = document.getElementById('set-pitch-val');
+    const testBtn    = document.getElementById('set-test');
+
+    function populateVoiceSelect() {
+      if (!speechSupported) return;
+      const voices = getAvailableVoices();
+      voiceSel.innerHTML = '';
+      const autoOpt = document.createElement('option');
+      autoOpt.value = '';
+      autoOpt.textContent = 'Auto (English)';
+      voiceSel.appendChild(autoOpt);
+      voices.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.voiceURI;
+        opt.textContent = `${v.name} (${v.lang})`;
+        voiceSel.appendChild(opt);
+      });
+      // Reflect saved selection; if the saved voice is gone, fall back to Auto.
+      const hasSaved = speechVoiceURI && voices.some(v => v.voiceURI === speechVoiceURI);
+      voiceSel.value = hasSaved ? speechVoiceURI : '';
+    }
+
+    function syncSettingsUI() {
+      speechTog.textContent = speechEnabled ? 'On' : 'Off';
+      speechTog.classList.toggle('off', !speechEnabled);
+      rateInput.value  = speechRate;  rateVal.textContent  = speechRate.toFixed(1);
+      pitchInput.value = speechPitch; pitchVal.textContent = speechPitch.toFixed(1);
+      if (!speechSupported) {
+        [speechTog, voiceSel, rateInput, pitchInput, testBtn].forEach(el => el.disabled = true);
+      }
+    }
+
+    function openSettings()  { populateVoiceSelect(); syncSettingsUI(); overlay.hidden = false; }
+    function closeSettings() { overlay.hidden = true; }
+
+    // Voices arrive asynchronously in Chrome — repopulate when they load.
+    if (synth && typeof synth.onvoiceschanged !== 'undefined') {
+      synth.onvoiceschanged = () => { synth.getVoices(); populateVoiceSelect(); };
+    }
+
+    // Gear: long-press (~600ms) to open — guards against accidental toddler taps.
+    let holdTimer = null;
+    gearBtn.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      gearBtn.classList.add('holding');
+      holdTimer = setTimeout(() => { gearBtn.classList.remove('holding'); openSettings(); }, 600);
+    });
+    const cancelHold = () => { clearTimeout(holdTimer); gearBtn.classList.remove('holding'); };
+    gearBtn.addEventListener('pointerup', cancelHold);
+    gearBtn.addEventListener('pointerleave', cancelHold);
+    gearBtn.addEventListener('pointercancel', cancelHold);
+
+    closeBtn.addEventListener('pointerdown', e => { e.preventDefault(); closeSettings(); });
+    // Tap the dimmed backdrop (but not the panel) to close.
+    overlay.addEventListener('pointerdown', e => { if (e.target === overlay) closeSettings(); });
+
+    // Speech on/off — reuse the shared toggle so keyboard buttons stay in sync.
+    speechTog.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      toggleSpeech();
+      syncSettingsUI();
+    });
+
+    voiceSel.addEventListener('change', () => {
+      speechVoiceURI = voiceSel.value;
+      localStorage.setItem('speech-voice', speechVoiceURI);
+    });
+
+    rateInput.addEventListener('input', () => {
+      speechRate = parseFloat(rateInput.value);
+      rateVal.textContent = speechRate.toFixed(1);
+      localStorage.setItem('speech-rate', speechRate);
+    });
+
+    pitchInput.addEventListener('input', () => {
+      speechPitch = parseFloat(pitchInput.value);
+      pitchVal.textContent = speechPitch.toFixed(1);
+      localStorage.setItem('speech-pitch', speechPitch);
+    });
+
+    // Test button — the only auditioning control; speaks even when speech is off.
+    testBtn.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      if (!speechEnabled) { toggleSpeech(); syncSettingsUI(); }
+      speak('hello');
+    });
+  })();
 
   // Register service worker for offline / PWA install
   if ('serviceWorker' in navigator) {
