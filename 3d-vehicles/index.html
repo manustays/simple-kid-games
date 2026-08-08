@@ -135,7 +135,7 @@
     const frameHooks = [];
 
     /* ===== ROTATION: drag, keyboard, idle auto-spin ===== */
-    let yawVel = 0, autoSpin = true, idleTimer = null;
+    let autoSpin = true, idleTimer = null;
     const PITCH_MAX = 0.55;
     function markInteract() {
       autoSpin = false;
@@ -155,8 +155,8 @@
       lastX = e.clientX; lastY = e.clientY;
       markInteract();
     });
-    canvas.addEventListener('pointerup', () => { dragId = null; });
-    canvas.addEventListener('pointercancel', () => { dragId = null; });
+    canvas.addEventListener('pointerup', (e) => { if (e.pointerId === dragId) dragId = null; });
+    canvas.addEventListener('pointercancel', (e) => { if (e.pointerId === dragId) dragId = null; });
     addEventListener('keydown', (e) => {
       if (!viewerActive) return;
       const k = e.key;
@@ -382,40 +382,49 @@
     function buildRickshaw() {
       const g = new THREE.Group();
       const bodyColor = 0xffe74c, canopyColor = 0x2ec4b6, dark = 0x1a1a2e;
-      const floor = mesh(new THREE.BoxGeometry(0.85, 0.12, 1.1), bodyColor);
-      floor.position.set(0, 0.45, -0.15);
+      // cabin sits further back, leaving the big front wheel exposed in open air ahead of it
+      const floor = mesh(new THREE.BoxGeometry(0.85, 0.12, 1.0), bodyColor);
+      floor.position.set(0, 0.5, -0.2);
       g.add(floor);
-      const wallL = mesh(new THREE.BoxGeometry(0.08, 0.5, 1.1), bodyColor);
-      wallL.position.set(-0.42, 0.7, -0.15);
+      const wallL = mesh(new THREE.BoxGeometry(0.08, 0.5, 1.0), bodyColor);
+      wallL.position.set(-0.42, 0.75, -0.2);
       g.add(wallL);
       const wallR = wallL.clone();
       wallR.position.x = 0.42;
       g.add(wallR);
       const seatBack = mesh(new THREE.BoxGeometry(0.85, 0.55, 0.12), bodyColor);
-      seatBack.position.set(0, 0.75, -0.65);
+      seatBack.position.set(0, 0.8, -0.7);
       g.add(seatBack);
-      const canopy = mesh(new THREE.BoxGeometry(0.95, 0.08, 1.2), canopyColor);
-      canopy.position.set(0, 1.15, -0.15);
+      const canopy = mesh(new THREE.BoxGeometry(0.95, 0.08, 1.05), canopyColor);
+      canopy.position.set(0, 1.2, -0.2);
       g.add(canopy);
-      [[-0.42, -0.6], [0.42, -0.6], [-0.42, 0.35], [0.42, 0.35]].forEach(([x, z]) => {
+      [[-0.42, -0.65], [0.42, -0.65], [-0.42, 0.3], [0.42, 0.3]].forEach(([x, z]) => {
         const pillar = mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 6), dark);
-        pillar.position.set(x, 0.8, z);
+        pillar.position.set(x, 0.85, z);
         g.add(pillar);
       });
-      const frontFork = mesh(new THREE.BoxGeometry(0.08, 0.12, 0.08), dark);
-      frontFork.position.set(0, 0.36, 0.6);
-      g.add(frontFork);
-      const headlight = mesh(new THREE.BoxGeometry(0.22, 0.14, 0.08), bodyColor);
-      headlight.position.set(0, 0.55, 0.55);
+      // fork: two struts bridging the cabin underside down to the big exposed front wheel,
+      // so the wheel reads as an attached part rather than a stray disc
+      [-0.13, 0.13].forEach(dx => {
+        const strut = mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.55, 6), dark);
+        strut.position.set(dx, 0.44, 0.55);
+        strut.rotation.x = 0.6;
+        g.add(strut);
+      });
+      const headlight = mesh(new THREE.BoxGeometry(0.24, 0.16, 0.08), bodyColor);
+      headlight.position.set(0, 0.72, 0.32);
       g.add(headlight);
-      const frontWheel = wheel(0.26, 0.15);
-      frontWheel.position.set(0, 0.26, 0.66);
+      // front wheel: enlarged and pushed clear of the cabin so it reads as a wheel, not a bar,
+      // at the default (mostly nose-on) camera angle
+      const frontWheel = wheel(0.4, 0.22);
+      frontWheel.position.set(0, 0.4, 0.82);
       g.add(frontWheel);
-      const rearWheelL = wheel(0.26, 0.18);
-      rearWheelL.position.set(-0.42, 0.26, -0.65);
+      // rear track widened so the 1-front/2-rear stance shows in silhouette
+      const rearWheelL = wheel(0.3, 0.2);
+      rearWheelL.position.set(-0.5, 0.3, -0.68);
       g.add(rearWheelL);
       const rearWheelR = rearWheelL.clone();
-      rearWheelR.position.x = 0.42;
+      rearWheelR.position.x = 0.5;
       g.add(rearWheelR);
       return g;
     }
@@ -509,7 +518,7 @@
       startLoop();
       showModel(v);
       spinner.rotation.y = -0.6; pivot.rotation.x = 0.15;
-      autoSpin = false; markInteract();
+      markInteract();
       // Task 9 adds: speak(v). Task 10 adds: lightsOff().
     }
     function closeViewer() {
