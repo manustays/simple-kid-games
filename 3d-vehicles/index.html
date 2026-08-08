@@ -33,7 +33,7 @@
     #nextBtn.pressed { transform: translateY(-50%) scale(0.92); }
     #engineBtn { bottom: calc(16px + env(safe-area-inset-bottom)); right: 16px; --c: #ff4d6d; width: clamp(96px, 16vmin, 128px); height: clamp(96px, 16vmin, 128px); }
     #lightsBtn { bottom: calc(16px + env(safe-area-inset-bottom)); left: 16px; --c: #ffe74c; width: clamp(96px, 16vmin, 128px); height: clamp(96px, 16vmin, 128px); }
-    #nameLbl { position: absolute; top: calc(14px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); color: #fff; font-size: clamp(28px, 6vmin, 52px); text-shadow: 0 0 14px var(--c, #fff); touch-action: manipulation; cursor: pointer; z-index: 2; transition: transform 0.1s; white-space: nowrap; }
+    #nameLbl { position: absolute; top: calc(14px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); max-width: calc(100% - 200px); color: #fff; font-size: clamp(28px, 6vmin, 52px); text-align: center; text-shadow: 0 0 14px var(--c, #fff); touch-action: manipulation; cursor: pointer; z-index: 2; transition: transform 0.1s; }
     #nameLbl.pressed { transform: translateX(-50%) scale(0.92); }
     @keyframes pump { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
     #engineBtn.on { animation: pump 0.5s infinite; }
@@ -65,7 +65,7 @@
       { id: 'truck',       name: 'Truck',        emoji: '🚚', recipe: 'diesel' },
       { id: 'towtruck',    name: 'Tow Truck',    emoji: '🛻', recipe: 'diesel' },
       { id: 'firetruck',   name: 'Fire Truck',   emoji: '🚒', recipe: 'diesel' },
-      { id: 'ambulance',   name: 'Ambulance',    emoji: '🚑', recipe: 'diesel' },
+      { id: 'ambulance',   name: 'Ambu­lance', speechName: 'Ambulance', emoji: '🚑', recipe: 'diesel' },
       { id: 'van',         name: 'Van',          emoji: '🚐', recipe: 'diesel' },
       { id: 'cementmixer', name: 'Cement Mixer', emoji: '🌀', recipe: 'diesel' },
       { id: 'tractor',     name: 'Tractor',      emoji: '🚜', recipe: 'heavyDiesel' },
@@ -206,11 +206,15 @@
     });
     /* ===== VIEWER ===== */
     const canvas = document.getElementById('c3d');
+    const nameLbl = document.getElementById('nameLbl');
+    const engineBtn = document.getElementById('engineBtn');
+    const lightsBtn = document.getElementById('lightsBtn');
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 50);
-    camera.position.set(0, 1.5, 4.4);
+    const CAM_BASE_ASPECT = 0.75, CAM_BASE_Y = 1.5, CAM_BASE_Z = 4.4; // framing tuned at this aspect; resize() pulls back below it
+    camera.position.set(0, CAM_BASE_Y, CAM_BASE_Z);
     camera.lookAt(0, 0.7, 0);
     scene.add(new THREE.HemisphereLight(0xffffff, 0x223355, 1.4));
     const sun = new THREE.DirectionalLight(0xffffff, 2.0);
@@ -571,7 +575,8 @@
       entranceT = 0;
       modelRoot.scale.setScalar(0.001);
       spinner.add(modelRoot);
-      if (lightsAreOn) { lightsOff(); } // rig belongs to the previous modelRoot; drop it
+      // ponytail: no lightsOff() here — showModel's only caller (openVehicle) already calls
+      // lightsOff() synchronously right after, so a call here would always be a no-op
     }
 
     /* ===== LIGHTS ===== */
@@ -614,7 +619,7 @@
     }
     function lightsOff() {
       lightsAreOn = false;
-      document.getElementById('lightsBtn').classList.remove('on');
+      lightsBtn.classList.remove('on');
       if (lightRig) {
         lightRig.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
         spinner.remove(lightRig);
@@ -624,7 +629,7 @@
     function lightsOn() {
       if (!modelRoot) return;
       lightsAreOn = true;
-      document.getElementById('lightsBtn').classList.add('on');
+      lightsBtn.classList.add('on');
       lightRig = buildLightRig(modelRoot.userData.bbox, VEHICLES[current].lightsOverride);
       spinner.add(lightRig);
     }
@@ -632,7 +637,13 @@
     function resize() {
       const w = innerWidth, h = innerHeight;
       renderer.setSize(w, h, false);
-      camera.aspect = w / h;
+      const aspect = w / h;
+      camera.aspect = aspect;
+      // narrower-than-design aspect (phones in portrait) clips long vehicles broadside; pull the
+      // camera back proportionally so the full model stays in frame at every yaw angle
+      const k = Math.max(1, CAM_BASE_ASPECT / aspect);
+      camera.position.set(0, CAM_BASE_Y * k, CAM_BASE_Z * k);
+      camera.lookAt(0, 0.7, 0);
       camera.updateProjectionMatrix();
     }
     addEventListener('resize', resize);
@@ -657,9 +668,8 @@
       engineStop(); engineBtn.classList.remove('on');
       current = (i + VEHICLES.length) % VEHICLES.length;
       const v = VEHICLES[current];
-      const lbl = document.getElementById('nameLbl');
-      lbl.textContent = v.name;
-      lbl.style.setProperty('--c', v.color);
+      nameLbl.textContent = v.name;
+      nameLbl.style.setProperty('--c', v.color);
       showScreen('viewerScreen');
       viewerActive = true;
       resize();
@@ -689,14 +699,12 @@
     bindBtn('nextBtn', () => { popTone(); openVehicle(current + 1); });
     bindBtn('lightsBtn', () => { popTone(); lightsAreOn ? lightsOff() : lightsOn(); });
 
-    const nameLbl = document.getElementById('nameLbl');
     nameLbl.addEventListener('pointerdown', () => {
       nameLbl.classList.add('pressed');
       setTimeout(() => nameLbl.classList.remove('pressed'), 120);
       speak(VEHICLES[current]);
     });
 
-    const engineBtn = document.getElementById('engineBtn');
     engineBtn.addEventListener('pointerdown', (e) => {
       engineBtn.setPointerCapture(e.pointerId);
       engineBtn.classList.add('on');
@@ -705,9 +713,9 @@
     ['pointerup', 'pointercancel'].forEach(ev =>
       engineBtn.addEventListener(ev, () => { engineBtn.classList.remove('on'); engineStop(); }));
 
-    window.showScreen = (id) => {
+    function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
-    };
+    }
   </script>
   <script>
     if ('serviceWorker' in navigator) {
