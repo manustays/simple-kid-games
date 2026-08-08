@@ -136,13 +136,14 @@
     const loader = new GLTFLoader();
     const modelCache = new Map();
 
+    const TARGET_HEIGHT = 1.5; // cap vertical extent so tall/thin models (crane, boat mast) clear the name label
     function normalize(sceneRoot, rot = 0) {
       const inner = new THREE.Group();
       sceneRoot.rotation.y = rot;
       inner.add(sceneRoot);
       let box = new THREE.Box3().setFromObject(inner);
       const size = box.getSize(new THREE.Vector3());
-      inner.scale.setScalar(2 / Math.max(size.x, size.y, size.z));
+      inner.scale.setScalar(Math.min(2 / Math.max(size.x, size.y, size.z), TARGET_HEIGHT / size.y));
       box = new THREE.Box3().setFromObject(inner);
       const c = box.getCenter(new THREE.Vector3());
       inner.position.set(-c.x, -box.min.y, -c.z);
@@ -196,11 +197,11 @@
         try {
           const gltf = await loader.loadAsync(`models/${v.id}.glb`);
           g = normalize(gltf.scene, v.rot || 0);
+          modelCache.set(v.id, g); // only cache successful loads; let failures retry next open
         } catch (e) {
           console.warn('model failed', v.id, e);
           g = emojiSprite(v.emoji);
         }
-        modelCache.set(v.id, g);
       }
       if (seq !== loadSeq) return; // user already moved on
       modelRoot = g;
