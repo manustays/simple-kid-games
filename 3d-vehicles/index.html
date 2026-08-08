@@ -165,6 +165,232 @@
       return g;
     }
 
+    /* ===== PROCEDURAL VEHICLES (no CC0 model exists for these five) ===== */
+    function mesh(geo, color) {
+      return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color }));
+    }
+    function wheel(radius, width, color = 0x1a1a2e) {
+      const w = mesh(new THREE.CylinderGeometry(radius, radius, width, 16), color);
+      w.rotation.z = Math.PI / 2;
+      return w;
+    }
+
+    function buildTowTruck() {
+      const g = new THREE.Group();
+      const cabColor = 0xff9f1c, bedColor = 0xe05d1c, metal = 0x777788, glass = 0x1b3a5c, dark = 0x1a1a2e;
+      const chassis = mesh(new THREE.BoxGeometry(1.0, 0.3, 2.5), bedColor);
+      chassis.position.set(0, 0.5, -0.1);
+      g.add(chassis);
+      const cab = mesh(new THREE.BoxGeometry(0.95, 0.6, 0.9), cabColor);
+      cab.position.set(0, 0.95, 0.75);
+      g.add(cab);
+      const windshield = mesh(new THREE.BoxGeometry(0.82, 0.32, 0.1), glass);
+      windshield.position.set(0, 1.05, 1.18);
+      g.add(windshield);
+      const bedFloor = mesh(new THREE.BoxGeometry(0.96, 0.15, 1.3), bedColor);
+      bedFloor.position.set(0, 0.72, -0.55);
+      g.add(bedFloor);
+      const bedWallL = mesh(new THREE.BoxGeometry(0.1, 0.35, 1.3), bedColor);
+      bedWallL.position.set(-0.45, 0.9, -0.55);
+      g.add(bedWallL);
+      const bedWallR = bedWallL.clone();
+      bedWallR.position.x = 0.45;
+      g.add(bedWallR);
+      // goalpost-style hoist: two posts + crossbar + chain + hanging hook, all rigidly stacked
+      const postL = mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.75, 8), metal);
+      postL.position.set(-0.35, 1.28, -1.1);
+      g.add(postL);
+      const postR = postL.clone();
+      postR.position.x = 0.35;
+      g.add(postR);
+      const crossbar = mesh(new THREE.BoxGeometry(0.84, 0.1, 0.1), metal);
+      crossbar.position.set(0, 1.63, -1.1);
+      g.add(crossbar);
+      const chain = mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.35, 6), dark);
+      chain.position.set(0, 1.4, -1.1);
+      g.add(chain);
+      const hook = mesh(new THREE.TorusGeometry(0.13, 0.04, 8, 16), dark);
+      hook.position.set(0, 1.15, -1.1);
+      g.add(hook);
+      [[-0.53, 0.34, 0.7], [0.53, 0.34, 0.7], [-0.53, 0.34, -0.75], [0.53, 0.34, -0.75]].forEach(([x, y, z]) => {
+        const w = wheel(0.34, 0.26);
+        w.position.set(x, y, z);
+        g.add(w);
+      });
+      return g;
+    }
+
+    function buildExcavator() {
+      const g = new THREE.Group();
+      const yellow = 0xffb703, dark = 0x22252b, metal = 0xffb703, teeth = 0x333344, glass = 0x1b3a5c;
+      const track = mesh(new THREE.BoxGeometry(1.1, 0.35, 2.0), dark);
+      track.position.y = 0.2;
+      g.add(track);
+      [-0.7, 0, 0.7].forEach(z => {
+        [-0.55, 0.55].forEach(x => {
+          const wh = wheel(0.2, 0.15, 0x111116);
+          wh.position.set(x, 0.2, z);
+          g.add(wh);
+        });
+      });
+      const turretBase = mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.15, 12), yellow);
+      turretBase.position.set(0, 0.45, 0);
+      g.add(turretBase);
+      const cab = mesh(new THREE.BoxGeometry(0.9, 0.55, 1.1), yellow);
+      cab.position.set(0.05, 0.8, -0.1);
+      cab.rotation.y = 0.4;
+      g.add(cab);
+      const cabGlass = mesh(new THREE.BoxGeometry(0.5, 0.35, 0.08), glass);
+      cabGlass.position.set(0.35, 0.85, 0.45);
+      cabGlass.rotation.y = 0.4;
+      g.add(cabGlass);
+      // boom: shoulder pivot -> elbow -> wrist -> bucket, chained so segments meet
+      const shoulder = new THREE.Vector3(0.05, 0.95, 0.35);
+      const boomDir = new THREE.Vector3(0, Math.sin(0.7), Math.cos(0.7));
+      const boomLen = 1.1;
+      const boom = mesh(new THREE.BoxGeometry(0.22, 0.22, boomLen), metal);
+      boom.position.copy(shoulder).addScaledVector(boomDir, boomLen / 2);
+      boom.rotation.x = -0.7;
+      g.add(boom);
+      const elbow = shoulder.clone().addScaledVector(boomDir, boomLen);
+      const stickDir = new THREE.Vector3(0, -Math.sin(1.0), Math.cos(1.0));
+      const stickLen = 0.85;
+      const stick = mesh(new THREE.BoxGeometry(0.16, 0.16, stickLen), metal);
+      stick.position.copy(elbow).addScaledVector(stickDir, stickLen / 2);
+      stick.rotation.x = 1.0;
+      g.add(stick);
+      const wrist = elbow.clone().addScaledVector(stickDir, stickLen);
+      const bucketDir = new THREE.Vector3(0, -Math.sin(1.4), Math.cos(1.4));
+      const bucket = mesh(new THREE.BoxGeometry(0.42, 0.32, 0.36), dark);
+      bucket.position.copy(wrist).addScaledVector(bucketDir, 0.18);
+      bucket.rotation.x = 1.4;
+      g.add(bucket);
+      const bucketTip = wrist.clone().addScaledVector(bucketDir, 0.36);
+      [-0.14, 0, 0.14].forEach(dx => {
+        const tooth = mesh(new THREE.ConeGeometry(0.05, 0.16, 4), teeth);
+        tooth.position.set(bucketTip.x + dx, bucketTip.y, bucketTip.z);
+        tooth.rotation.x = 1.4 + Math.PI / 2;
+        g.add(tooth);
+      });
+      return g;
+    }
+
+    function buildDigger() {
+      const g = new THREE.Group();
+      const yellow = 0xffb703, dark = 0x22252b, metal = 0x777788, glass = 0x1b3a5c, blade = 0xffe74c;
+      const track = mesh(new THREE.BoxGeometry(1.1, 0.36, 2.0), dark);
+      track.position.y = 0.2;
+      g.add(track);
+      [-0.7, 0, 0.7].forEach(z => {
+        [-0.56, 0.56].forEach(x => {
+          const wh = wheel(0.2, 0.16, 0x111116);
+          wh.position.set(x, 0.2, z);
+          g.add(wh);
+        });
+      });
+      const body = mesh(new THREE.BoxGeometry(0.95, 0.5, 1.6), yellow);
+      body.position.set(0, 0.63, -0.1);
+      g.add(body);
+      const cab = mesh(new THREE.BoxGeometry(0.7, 0.5, 0.7), yellow);
+      cab.position.set(0, 1.13, -0.45);
+      g.add(cab);
+      const cabGlass = mesh(new THREE.BoxGeometry(0.72, 0.3, 0.72), glass);
+      cabGlass.position.set(0, 1.2, -0.45);
+      g.add(cabGlass);
+      const stack = mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.45, 8), dark);
+      stack.position.set(0.3, 1.25, 0.1);
+      g.add(stack);
+      const armL = mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.4, 6), metal);
+      armL.rotation.x = Math.PI / 2;
+      armL.position.set(-0.35, 0.5, 0.9);
+      g.add(armL);
+      const armR = armL.clone();
+      armR.position.x = 0.35;
+      g.add(armR);
+      const bladeMesh = mesh(new THREE.BoxGeometry(1.3, 0.55, 0.15), blade);
+      bladeMesh.position.set(0, 0.5, 1.1);
+      bladeMesh.rotation.x = -0.15;
+      g.add(bladeMesh);
+      return g;
+    }
+
+    function buildRoadRoller() {
+      const g = new THREE.Group();
+      const bodyColor = 0xff4d6d, drumColor = 0xced4da, glass = 0x1b3a5c;
+      const drum = mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.9, 20), drumColor);
+      drum.rotation.z = Math.PI / 2;
+      drum.position.set(0, 0.55, 0.85);
+      g.add(drum);
+      const frame = mesh(new THREE.BoxGeometry(0.5, 0.25, 1.6), bodyColor);
+      frame.position.set(0, 0.55, -0.1);
+      g.add(frame);
+      const body = mesh(new THREE.BoxGeometry(0.85, 0.45, 1.1), bodyColor);
+      body.position.set(0, 0.85, -0.4);
+      g.add(body);
+      const cab = mesh(new THREE.BoxGeometry(0.7, 0.5, 0.55), bodyColor);
+      cab.position.set(0, 1.3, -0.6);
+      g.add(cab);
+      const cabGlass = mesh(new THREE.BoxGeometry(0.72, 0.32, 0.57), glass);
+      cabGlass.position.set(0, 1.32, -0.6);
+      g.add(cabGlass);
+      const rearWheelL = wheel(0.32, 0.24);
+      rearWheelL.position.set(-0.42, 0.32, -0.9);
+      g.add(rearWheelL);
+      const rearWheelR = rearWheelL.clone();
+      rearWheelR.position.x = 0.42;
+      g.add(rearWheelR);
+      return g;
+    }
+
+    function buildRickshaw() {
+      const g = new THREE.Group();
+      const bodyColor = 0xffe74c, canopyColor = 0x2ec4b6, dark = 0x1a1a2e;
+      const floor = mesh(new THREE.BoxGeometry(0.85, 0.12, 1.1), bodyColor);
+      floor.position.set(0, 0.45, -0.15);
+      g.add(floor);
+      const wallL = mesh(new THREE.BoxGeometry(0.08, 0.5, 1.1), bodyColor);
+      wallL.position.set(-0.42, 0.7, -0.15);
+      g.add(wallL);
+      const wallR = wallL.clone();
+      wallR.position.x = 0.42;
+      g.add(wallR);
+      const seatBack = mesh(new THREE.BoxGeometry(0.85, 0.55, 0.12), bodyColor);
+      seatBack.position.set(0, 0.75, -0.65);
+      g.add(seatBack);
+      const canopy = mesh(new THREE.BoxGeometry(0.95, 0.08, 1.2), canopyColor);
+      canopy.position.set(0, 1.15, -0.15);
+      g.add(canopy);
+      [[-0.42, -0.6], [0.42, -0.6], [-0.42, 0.35], [0.42, 0.35]].forEach(([x, z]) => {
+        const pillar = mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 6), dark);
+        pillar.position.set(x, 0.8, z);
+        g.add(pillar);
+      });
+      const frontFork = mesh(new THREE.BoxGeometry(0.08, 0.12, 0.08), dark);
+      frontFork.position.set(0, 0.36, 0.6);
+      g.add(frontFork);
+      const headlight = mesh(new THREE.BoxGeometry(0.22, 0.14, 0.08), bodyColor);
+      headlight.position.set(0, 0.55, 0.55);
+      g.add(headlight);
+      const frontWheel = wheel(0.26, 0.15);
+      frontWheel.position.set(0, 0.26, 0.66);
+      g.add(frontWheel);
+      const rearWheelL = wheel(0.26, 0.18);
+      rearWheelL.position.set(-0.42, 0.26, -0.65);
+      g.add(rearWheelL);
+      const rearWheelR = rearWheelL.clone();
+      rearWheelR.position.x = 0.42;
+      g.add(rearWheelR);
+      return g;
+    }
+
+    const BUILDERS = {
+      towtruck: buildTowTruck,
+      excavator: buildExcavator,
+      digger: buildDigger,
+      roadroller: buildRoadRoller,
+      rickshaw: buildRickshaw
+    };
+
     function blobShadow() {
       const cv = document.createElement('canvas'); cv.width = cv.height = 128;
       const x = cv.getContext('2d');
@@ -193,7 +419,10 @@
       const seq = ++loadSeq;
       if (modelRoot) { spinner.remove(modelRoot); modelRoot = null; }
       let g = modelCache.get(v.id);
-      if (!g) {
+      if (!g && BUILDERS[v.id]) {
+        g = normalize(BUILDERS[v.id](), v.rot || 0); // synchronous, cannot fail: cache like a successful load
+        modelCache.set(v.id, g);
+      } else if (!g) {
         try {
           const gltf = await loader.loadAsync(`models/${v.id}.glb`);
           g = normalize(gltf.scene, v.rot || 0);
