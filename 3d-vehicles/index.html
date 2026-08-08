@@ -101,6 +101,80 @@
       g.gain.setValueAtTime(0.25, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
       o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + 0.16);
     }
+    const RECIPES = {
+      diesel:      { osc: 'sawtooth', f0: 52,  f1: 52,  ramp: 0,   noise: 0.25, nfreq: 220, pitchLfo: [6, 4],  ampLfo: null },
+      heavyDiesel: { osc: 'sawtooth', f0: 36,  f1: 36,  ramp: 0,   noise: 0.35, nfreq: 160, pitchLfo: [4, 3],  ampLfo: null },
+      petrol:      { osc: 'sawtooth', f0: 70,  f1: 150, ramp: 2.5, noise: 0.12, nfreq: 420, pitchLfo: [8, 3],  ampLfo: null },
+      train:       { osc: 'sawtooth', f0: 42,  f1: 42,  ramp: 0,   noise: 0.40, nfreq: 300, pitchLfo: null,    ampLfo: [4.5, 0.85] },
+      electric:    { osc: 'sine',     f0: 120, f1: 320, ramp: 2,   noise: 0.05, nfreq: 800, pitchLfo: null,    ampLfo: null },
+      putt:        { osc: 'square',   f0: 46,  f1: 46,  ramp: 0,   noise: 0.15, nfreq: 250, pitchLfo: [5, 2],  ampLfo: [9, 0.8] },
+      boat:        { osc: 'sawtooth', f0: 44,  f1: 44,  ramp: 0,   noise: 0.45, nfreq: 350, pitchLfo: [3, 2],  ampLfo: [3, 0.5] },
+      helicopter:  { osc: 'sine',     f0: 30,  f1: 30,  ramp: 0,   noise: 0.60, nfreq: 420, pitchLfo: null,    ampLfo: [13, 0.9] }
+    };
+
+    let noiseBuf = null;
+    function getNoiseBuf(ctx) {
+      if (!noiseBuf) {
+        noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+        const d = noiseBuf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      return noiseBuf;
+    }
+
+    let engineNodes = null;
+    function engineStart(name) {
+      engineStop();
+      const r = RECIPES[name], ctx = ensureAudio(), t = ctx.currentTime;
+      const master = ctx.createGain();
+      master.gain.setValueAtTime(0.0001, t);
+      master.gain.linearRampToValueAtTime(0.5, t + 0.05);
+
+      const osc = ctx.createOscillator();
+      osc.type = r.osc;
+      osc.frequency.setValueAtTime(r.f0, t);
+      if (r.ramp > 0) osc.frequency.linearRampToValueAtTime(r.f1, t + r.ramp);
+      const oscGain = ctx.createGain();
+      oscGain.gain.value = 0.6;
+      osc.connect(oscGain).connect(master);
+
+      const noise = ctx.createBufferSource();
+      noise.buffer = getNoiseBuf(ctx); noise.loop = true;
+      const nFilt = ctx.createBiquadFilter();
+      nFilt.type = 'lowpass'; nFilt.frequency.value = r.nfreq;
+      const nGain = ctx.createGain(); nGain.gain.value = r.noise;
+      noise.connect(nFilt).connect(nGain).connect(master);
+
+      const extras = [];
+      if (r.pitchLfo) {
+        const lfo = ctx.createOscillator(), lg = ctx.createGain();
+        lfo.frequency.value = r.pitchLfo[0]; lg.gain.value = r.pitchLfo[1];
+        lfo.connect(lg).connect(osc.frequency); lfo.start(t); extras.push(lfo);
+      }
+      let out = master;
+      if (r.ampLfo) {
+        const [rate, depth] = r.ampLfo;
+        const amp = ctx.createGain();
+        amp.gain.value = 1 - depth;
+        const lfo = ctx.createOscillator(), lg = ctx.createGain();
+        lfo.frequency.value = rate; lg.gain.value = depth;
+        lfo.connect(lg).connect(amp.gain); lfo.start(t); extras.push(lfo);
+        master.connect(amp); out = amp;
+      }
+      out.connect(ctx.destination);
+      osc.start(t); noise.start(t);
+      engineNodes = { master, out, srcs: [osc, noise, ...extras], ctx };
+    }
+    function engineStop() {
+      if (!engineNodes) return;
+      const { master, out, srcs, ctx } = engineNodes;
+      engineNodes = null;
+      const t = ctx.currentTime;
+      master.gain.cancelScheduledValues(t);
+      master.gain.setValueAtTime(master.gain.value, t);
+      master.gain.linearRampToValueAtTime(0.0001, t + 0.15);
+      setTimeout(() => { srcs.forEach(s => { try { s.stop(); } catch (_) {} }); out.disconnect(); }, 250);
+    }
     /* ===== SPEECH ===== */
     /* ===== GRID ===== */
     const gridEl = document.getElementById('gridScreen');
@@ -503,10 +577,14 @@
       rafId = requestAnimationFrame(frame);
     }
     function startLoop() { if (!rafId) { lastT = performance.now(); rafId = requestAnimationFrame(frame); } }
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) startLoop(); });
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) { startLoop(); return; }
+      engineStop(); engineBtn.classList.remove('on');
+    });
 
     let current = 0;
     function openVehicle(i) {
+      engineStop(); engineBtn.classList.remove('on');
       current = (i + VEHICLES.length) % VEHICLES.length;
       const v = VEHICLES[current];
       const lbl = document.getElementById('nameLbl');
@@ -522,6 +600,7 @@
       // Task 9 adds: speak(v). Task 10 adds: lightsOff().
     }
     function closeViewer() {
+      engineStop(); engineBtn.classList.remove('on');
       viewerActive = false;
       showScreen('gridScreen');
     }
@@ -536,6 +615,15 @@
     bindBtn('backBtn', () => { popTone(); closeViewer(); });
     bindBtn('prevBtn', () => { popTone(); openVehicle(current - 1); });
     bindBtn('nextBtn', () => { popTone(); openVehicle(current + 1); });
+
+    const engineBtn = document.getElementById('engineBtn');
+    engineBtn.addEventListener('pointerdown', (e) => {
+      engineBtn.setPointerCapture(e.pointerId);
+      engineBtn.classList.add('on');
+      engineStart(VEHICLES[current].recipe);
+    });
+    ['pointerup', 'pointercancel'].forEach(ev =>
+      engineBtn.addEventListener(ev, () => { engineBtn.classList.remove('on'); engineStop(); }));
 
     window.showScreen = (id) => {
       document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
