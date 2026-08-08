@@ -598,7 +598,7 @@
         d.rotation.y = Math.PI;
         g.add(d);
       });
-      const hy = pos.head[0][1], hz = pos.head[0][2];
+      const hy = pos.head[0] ? pos.head[0][1] : size.y * 0.35, hz = pos.head[0] ? pos.head[0][2] : bbox.max.z;
       const spot = new THREE.SpotLight(0xfff2cc, 60, 10, 0.5, 0.5, 1.2);
       spot.position.set(0, hy, hz);
       spot.target.position.set(0, hy * 0.6, hz + 6);
@@ -615,7 +615,11 @@
     function lightsOff() {
       lightsAreOn = false;
       document.getElementById('lightsBtn').classList.remove('on');
-      if (lightRig) { spinner.remove(lightRig); lightRig = null; }
+      if (lightRig) {
+        lightRig.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+        spinner.remove(lightRig);
+        lightRig = null;
+      }
     }
     function lightsOn() {
       if (!modelRoot) return;
