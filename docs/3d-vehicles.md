@@ -109,6 +109,49 @@ Fields:
 | `rot` | no | Extra Y-axis rotation (radians) applied once, inside `normalize()`, to correct a model's default facing (e.g. `bus` ships facing sideways in its source file, so `rot: Math.PI / 2` turns it to face the camera). Only needed for GLB models whose authored orientation is wrong for this viewer's default camera angle. |
 | `lightsOverride` | no | Replaces the auto-computed headlight/taillight positions (see "Light rig" below) for models where the bounding-box heuristic puts lamps in visibly wrong places. |
 
+## Where to find models
+
+Two exhaustive searches were run while building this activity. What follows is what they learned,
+so the next person does not repeat them.
+
+**Only CC0 is usable here.** Not CC-BY, not CC-BY-SA, not "free for personal use". CC-BY requires
+carrying visible attribution in a fullscreen app aimed at pre-readers, which there is nowhere sane
+to put. Sketchfab's default licence is *not* CC0 — filter explicitly, and check the individual
+model, not the site's general terms.
+
+Sources, in the order worth trying:
+
+| Source | Licence | Format | Notes |
+|---|---|---|---|
+| [kenney.nl/assets](https://kenney.nl/assets) | CC0, all of it | `.glb` in most kits | Best first stop. Direct zip downloads, no gating. Car Kit, Train Kit, Watercraft Kit all shipped models here. Consistent art style — models from different Kenney kits look like they belong together. |
+| [poly.pizza](https://poly.pizza) | mixed — **filter to CC0** | `.glb` download button | Search is JavaScript-driven, so `curl` sees nothing; browse it in a real browser. Mirrors a lot of Kenney and Quaternius work. Verify licence per model. |
+| [quaternius.com](https://quaternius.com) | CC0, all of it | `.obj`/`.fbx`, sometimes `.gltf` | Good construction and transport packs, but downloads sit behind **Google Drive folders** that `curl` cannot enumerate — you must click through in a browser. This is what blocked the first sourcing pass. |
+| [opengameart.org](https://opengameart.org) | mixed — **filter to CC0** | anything, often `.blend` | Widest selection, worst consistency. Many good models ship only as `.blend`, which needs Blender to export. |
+
+**Search terms that worked:** the plain vehicle name, plus its regional synonyms — "digger" and
+"bulldozer", "tuk tuk" and "auto rickshaw" and "three wheeler", "road roller" and "steam roller"
+and "compactor", "cement mixer" and "concrete mixer". Searching one name only will miss models.
+
+**What is genuinely hard to find under CC0** (as of the 2026-08 sweep): tow truck, excavator,
+bulldozer/digger, road roller, auto rickshaw. All five are built procedurally instead — see Route B.
+If you find good CC0 models for these, replacing a procedural build with a real model is a clean
+swap: delete the `BUILDERS` entry, add the file plus its `ASSETS` line and credits row.
+
+### Getting a model into the repo
+
+1. Download it. Prefer `.glb` — a single self-contained binary. A `.gltf` + `.bin` + loose textures
+   set means several extra fetches and several extra `ASSETS` lines; convert it or pick another.
+2. If it is `.obj`/`.fbx`/`.blend`, convert to `.glb`. Blender is the general-purpose tool
+   (`File > Import`, then `File > Export > glTF 2.0`, choosing the **glTF Binary (.glb)** format and
+   ticking the option to embed textures). Blender is not a project dependency — it is a one-off
+   tool on your machine, and only the resulting `.glb` gets committed.
+3. Check the size. Aim under 300 KB per model; the whole activity is ~4 MB and every model is
+   pre-cached for offline use, so a single 5 MB model is a real cost on a phone.
+4. Sanity-check the file really is a GLB: `head -c 4 yourfile.glb` should print `glTF`. A "model"
+   that is actually an HTML error page saved with the wrong extension is a common download failure.
+5. Rename it to `<id>.glb`, lowercase, no spaces — the `id` in `VEHICLES` builds the path.
+6. Then follow Route A below for the wiring.
+
 ## Adding a 24th vehicle
 
 There are two routes, depending on whether a CC0 `.glb` model exists for it.
