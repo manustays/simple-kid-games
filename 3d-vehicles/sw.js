@@ -5,7 +5,23 @@ const ASSETS = [
   './manifest.json',
   './lib/three.module.min.js',
   './lib/GLTFLoader.js',
-  './utils/BufferGeometryUtils.js'
+  './utils/BufferGeometryUtils.js',
+  './models/ambulance.glb',
+  './models/boat.glb',
+  './models/coupe.glb',
+  './models/crane.glb',
+  './models/firetruck.glb',
+  './models/hatchback.glb',
+  './models/helicopter.glb',
+  './models/jeep.glb',
+  './models/metro.glb',
+  './models/sedan.glb',
+  './models/suv.glb',
+  './models/tractor.glb',
+  './models/train.glb',
+  './models/truck.glb',
+  './models/van.glb',
+  './models/vintage.glb'
 ];
 
 self.addEventListener('install', e => {
