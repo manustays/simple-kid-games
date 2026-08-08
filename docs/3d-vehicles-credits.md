@@ -1,8 +1,11 @@
 # 3D Vehicles — Model Credits
 
-All 18 shipped models are **CC0 1.0 (Creative Commons Zero / Public Domain)**. No attribution is
-legally required, but creators are credited below as a courtesy. 5 of the 23 vehicle slots in the
-app have no model yet (see `task-5-report.md`) — those show their emoji fallback instead.
+All 18 shipped `.glb` models are **CC0 1.0 (Creative Commons Zero / Public Domain)**. No attribution
+is legally required, but creators are credited below as a courtesy. The remaining 5 of the 23
+vehicles (Tow Truck, Excavator, Digger, Road Roller, Auto Rickshaw) have no CC0 model available and
+are instead built procedurally from three.js primitives directly in `3d-vehicles/index.html` — see
+`docs/3d-vehicles.md` for how those are constructed. There is no emoji fallback in normal operation;
+an emoji sprite only appears if a `.glb` fails to load at runtime, which is a bug, not a design.
 
 | id | model name | author | source URL | license |
 |---|---|---|---|---|
