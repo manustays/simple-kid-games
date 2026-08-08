@@ -176,6 +176,16 @@
       setTimeout(() => { srcs.forEach(s => { try { s.stop(); } catch (_) {} }); out.disconnect(); }, 250);
     }
     /* ===== SPEECH ===== */
+    function speak(v) {
+      if (!('speechSynthesis' in window)) return;
+      try {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(v.speechName || v.name);
+        u.rate = 0.8;
+        u.lang = 'en';
+        speechSynthesis.speak(u);
+      } catch (_) { /* silent no-op per spec */ }
+    }
     /* ===== GRID ===== */
     const gridEl = document.getElementById('gridScreen');
     VEHICLES.forEach((v, i) => {
@@ -597,7 +607,8 @@
       showModel(v);
       spinner.rotation.y = -0.6; pivot.rotation.x = 0.15;
       markInteract();
-      // Task 9 adds: speak(v). Task 10 adds: lightsOff().
+      speak(v);
+      // Task 10 adds: lightsOff().
     }
     function closeViewer() {
       engineStop(); engineBtn.classList.remove('on');
@@ -615,6 +626,13 @@
     bindBtn('backBtn', () => { popTone(); closeViewer(); });
     bindBtn('prevBtn', () => { popTone(); openVehicle(current - 1); });
     bindBtn('nextBtn', () => { popTone(); openVehicle(current + 1); });
+
+    const nameLbl = document.getElementById('nameLbl');
+    nameLbl.addEventListener('pointerdown', () => {
+      nameLbl.classList.add('pressed');
+      setTimeout(() => nameLbl.classList.remove('pressed'), 120);
+      speak(VEHICLES[current]);
+    });
 
     const engineBtn = document.getElementById('engineBtn');
     engineBtn.addEventListener('pointerdown', (e) => {
