@@ -38,7 +38,22 @@
       font-family: 'Fredoka One', cursive;
       touch-action: none;
       -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
       user-select: none;
+    }
+
+    /* Nothing in the chrome or the typed strip is selectable — only #native-edit
+       (which lives outside #digits-wrap) stays a real text field. */
+    #tab-bar, #panels, #digits-wrap {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* Keyboard focus ring — keys set outline:none, so touch is unaffected. */
+    .key:focus-visible, .lkey:focus-visible, .ekey:focus-visible,
+    .ckey:focus-visible, .tab:focus-visible {
+      outline: 3px solid var(--c7);
+      outline-offset: 2px;
     }
 
     /* Starfield bg */
@@ -272,8 +287,8 @@
       transition: opacity 0.15s;
     }
 
-    .key:active { transform: scale(0.92) translateY(3px); filter: brightness(1.2); }
-    .key:active::after { opacity: 1; }
+    .key:active, .key.pressed { transform: scale(0.92) translateY(3px); filter: brightness(1.2); }
+    .key:active::after, .key.pressed::after { opacity: 1; }
 
     /* Distinct gradient per key */
     .key[data-n="1"]  { background: linear-gradient(135deg, #ff4d6d, #c9184a); }
@@ -359,7 +374,7 @@
       overflow: hidden;
     }
 
-    .lkey:active {
+    .lkey:active, .lkey.pressed {
       filter: brightness(1.6);
       transform: scale(0.9);
     }
@@ -420,7 +435,15 @@
       transition: transform 0.1s cubic-bezier(0.36, 1.56, 0.64, 1);
     }
 
-    .ekey:active { transform: scale(0.82); }
+    .ekey:active, .ekey.pressed { transform: scale(0.82); }
+
+    /* Physical-keyboard selection ring (emoji tab) */
+    .ekey.sel {
+      outline: 3px solid var(--c9);
+      outline-offset: -2px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.08);
+    }
 
     /* ── Color squares (display area) ── */
     .color-char {
@@ -481,8 +504,8 @@
       transition: opacity 0.15s;
     }
 
-    .ckey:active { transform: scale(0.92) translateY(3px); filter: brightness(1.2); }
-    .ckey:active::after { opacity: 1; }
+    .ckey:active, .ckey.pressed { transform: scale(0.92) translateY(3px); filter: brightness(1.2); }
+    .ckey:active::after, .ckey.pressed::after { opacity: 1; }
 
     /* ── Settings gear + overlay ── */
     #gear-btn {
@@ -821,6 +844,11 @@
     wrap.innerHTML = '';
   }
 
+  /** Remove the most recently typed character/square (physical Backspace). */
+  function removeLast() {
+    if (wrap.lastChild) wrap.removeChild(wrap.lastChild);
+  }
+
   function spawnBurst(x, y) {
     const el = document.createElement('div');
     el.className = 'burst';
@@ -841,6 +869,22 @@
     ripple.style.top = (y - rect.top - size / 2) + 'px';
     btn.appendChild(ripple);
     ripple.addEventListener('animationend', () => ripple.remove());
+  }
+
+  /**
+   * Flash an on-screen key as if it had been tapped, bursting from its centre.
+   * Used when the matching physical key is pressed.
+   * @param {HTMLElement} btn  the on-screen key
+   * @param {boolean} ripple   emoji keys aren't positioned/clipped, so they skip it
+   */
+  function flashKey(btn, ripple = true) {
+    const rect = btn.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+    if (ripple) addRipple(btn, cx, cy);
+    spawnBurst(cx, cy);
+    btn.classList.add('pressed');
+    clearTimeout(btn._flashTimer);   // don't let an older flash cut a newer one short
+    btn._flashTimer = setTimeout(() => btn.classList.remove('pressed'), 120);
   }
 
   speechBtn.addEventListener('pointerdown', e => {
@@ -926,6 +970,7 @@
 
   // Build Emoji keyboard
   // MARK: Emojies
+  let emojiKeys = null;   // assigned below — physical-keyboard bridge for the emoji tab
   (function() {
     const emojiData = [
       // Vehicles
@@ -1020,13 +1065,40 @@
     }
 
     const kb = document.getElementById('keyboard-emoji');
-    emojiData.forEach(({ e, n }) => {
+    const buttons = emojiData.map(({ e, n }, i) => {
       const btn = document.createElement('button');
       btn.className = 'ekey';
       btn.textContent = e;
       btn.dataset.name = n;
+      btn.dataset.idx = i;
       kb.appendChild(btn);
+      return btn;
     });
+
+    // -1 = no physical keyboard seen yet, so no ring is shown.
+    let emojiSel = -1;
+
+    /** Move the selection ring to index i and keep it on screen. */
+    function setEmojiSel(i) {
+      if (i < 0 || i >= buttons.length) return;
+      if (emojiSel >= 0) buttons[emojiSel].classList.remove('sel');
+      emojiSel = i;
+      buttons[i].classList.add('sel');
+      buttons[i].scrollIntoView({ block: 'nearest' });
+    }
+
+    /** Type + speak the emoji at index i, flashing its key. */
+    function typeEmoji(i) {
+      const btn = buttons[i];
+      flashKey(btn, false);
+      addDigit(btn.textContent);
+      speak(btn.dataset.name);
+    }
+
+    // Grid is `auto-fill`, so the column count changes with viewport width.
+    function emojiCols() {
+      return Math.max(1, getComputedStyle(kb).gridTemplateColumns.split(' ').length);
+    }
 
     let ekeyStartX = 0, ekeyStartY = 0, ekeyScrolled = false;
     kb.addEventListener('pointerdown', ev => {
@@ -1046,7 +1118,65 @@
       spawnBurst(ev.clientX, ev.clientY);
       addDigit(btn.textContent);
       speak(btn.dataset.name);
+      // Clicking parks the ring here, so arrows continue from what was tapped.
+      if (emojiSel >= 0) setEmojiSel(+btn.dataset.idx);
     });
+
+    emojiKeys = {
+      /**
+       * Handle a physical keypress while the emoji tab is active.
+       * @returns {boolean} true if the key was consumed.
+       */
+      handleKey(e) {
+        const n = buttons.length;
+        if (!n) return false;
+        const k = e.key;
+
+        // First key of the session just reveals the ring on emoji #1.
+        const firstTouch = emojiSel < 0;
+        if (firstTouch) setEmojiSel(0);
+
+        if (k.startsWith('Arrow')) {
+          if (firstTouch) return true;
+          const cols = emojiCols();
+          let i = emojiSel;
+          if (k === 'ArrowLeft')       i = (i - 1 + n) % n;
+          else if (k === 'ArrowRight') i = (i + 1) % n;
+          else if (k === 'ArrowUp') {
+            // wrap to the last cell of the same column
+            if (i - cols >= 0) i -= cols;
+            else { let j = i % cols; while (j + cols < n) j += cols; i = j; }
+          }
+          else if (k === 'ArrowDown')  i = i + cols < n ? i + cols : i % cols;
+          else return false;
+          setEmojiSel(i);
+          return true;
+        }
+
+        if (k === 'Enter' || k === ' ') {
+          if (!firstTouch) typeEmoji(emojiSel);
+          return true;
+        }
+
+        if (k >= '0' && k <= '9') { addDigit(k); return true; }
+
+        if (k.length === 1 && /[a-z]/i.test(k)) {
+          const letter = k.toLowerCase();
+          // Start after the current selection so the same letter cycles matches.
+          for (let step = 1; step <= n; step++) {
+            const i = (emojiSel + step) % n;
+            if (buttons[i].dataset.name.toLowerCase().startsWith(letter)) {
+              setEmojiSel(i);
+              typeEmoji(i);
+              break;
+            }
+          }
+          return true;   // swallow unmatched letters rather than typing stray text
+        }
+
+        return false;
+      }
+    };
   })();
 
   // MARK: Colors
@@ -1094,17 +1224,90 @@
     });
   })();
 
-  // Physical keyboard support (tab-aware)
+  // ── Physical keyboard support (tab-aware) ──
+  const TAB_NAMES = ['numbers', 'letters', 'emoji', 'colors', 'keyboard'];
+  // Colours keyed by first letter; 'b' is blue, so black gets 'k'.
+  const COLOR_KEYS = { r: 'red', g: 'green', b: 'blue', y: 'yellow', w: 'white', k: 'black' };
+
+  /** The on-screen key matching a typed character, if the active panel has one. */
+  function keyButtonFor(tab, ch) {
+    if (tab === 'numbers') return document.querySelector(`#keyboard .key[data-n="${ch}"]`);
+    if (tab === 'letters') return document.querySelector(`#keyboard-letters .lkey[data-char="${ch}"]`);
+    return null;
+  }
+
+  /** The colour key a physical key selects: 1–6 by position, or r/g/b/y/w/k by name. */
+  function colorButtonFor(key) {
+    const btns = document.querySelectorAll('#keyboard-colors .ckey');
+    if (key >= '1' && key <= '6') return btns[+key - 1] || null;
+    const name = COLOR_KEYS[key.toLowerCase()];
+    return name ? [...btns].find(b => b.dataset.name === name) : null;
+  }
+
   document.addEventListener('keydown', e => {
-    const activeTab = document.querySelector('.tab.active')?.dataset.tab;
-    if (activeTab === 'letters') {
-      if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) addDigit(e.key.toUpperCase());
-      if (e.key === ' ') {
-        addSpace();
+    const overlay = document.getElementById('settings-overlay');
+    if (!overlay.hidden) {
+      // Settings is open: Escape closes it, everything else stays native so the
+      // sliders, select and close button remain keyboard-operable.
+      if (e.key === 'Escape') { e.preventDefault(); overlay.hidden = true; }
+      return;
+    }
+
+    const tab = document.querySelector('.tab.active')?.dataset.tab;
+    const mod = e.ctrlKey || e.metaKey;
+
+    // Tab shortcuts run before the Keyboard-tab bail-out, so it's never a trap.
+    if (mod && !e.altKey) {
+      if (e.key >= '1' && e.key <= '5') { e.preventDefault(); switchTab(TAB_NAMES[+e.key - 1]); return; }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        const i = TAB_NAMES.indexOf(tab);
+        const step = e.key === 'ArrowRight' ? 1 : -1;
+        switchTab(TAB_NAMES[(i + step + TAB_NAMES.length) % TAB_NAMES.length]);
+        return;
       }
-    } else {
-      if (e.key >= '0' && e.key <= '9') addDigit(e.key);
-      if (e.key === 'Backspace' || e.key === 'Delete') clearAll();
+    }
+
+    if (mod || e.altKey) return;      // leave every other browser chord alone
+    if (tab === 'keyboard') return;   // the contenteditable owns its own typing
+
+    if (e.key === 'Backspace') { e.preventDefault(); e.shiftKey ? clearAll() : removeLast(); return; }
+    if (e.key === 'Delete')    { e.preventDefault(); removeLast(); return; }
+    if (e.key === 'Escape')    { e.preventDefault(); clearAll(); return; }
+
+    // Held keys would flood the display and the speech queue; arrows may repeat.
+    if (e.repeat && !e.key.startsWith('Arrow')) return;
+
+    if (tab === 'emoji') {
+      if (emojiKeys && emojiKeys.handleKey(e)) e.preventDefault();
+      return;
+    }
+
+    if (tab === 'colors') {
+      const cbtn = colorButtonFor(e.key);
+      if (cbtn) {
+        e.preventDefault();
+        flashKey(cbtn);
+        addColor(cbtn.dataset.name, cbtn.dataset.hex);
+        return;
+      }
+      // no colour for this key — fall through and type it as a character
+    }
+
+    if (e.key === ' ') {
+      e.preventDefault();
+      addSpace();
+      const spaceBtn = keyButtonFor(tab, ' ');
+      if (spaceBtn) flashKey(spaceBtn);
+      return;
+    }
+
+    if (e.key.length === 1 && /[a-z0-9]/i.test(e.key)) {
+      e.preventDefault();
+      const ch = /[a-z]/i.test(e.key) ? e.key.toUpperCase() : e.key;
+      addDigit(ch);
+      const btn = keyButtonFor(tab, ch);
+      if (btn) flashKey(btn);
     }
   });
 
@@ -1134,6 +1337,20 @@
     if (!isKeyboard) nativeEdit.blur();
   }
 
+  /**
+   * Switch tabs and remember the choice. Focusing #native-edit here keeps the
+   * keyboard shortcut equivalent to tapping the tab.
+   * @param {string} tabName
+   */
+  function switchTab(tabName) {
+    activateTab(tabName);
+    localStorage.setItem('active-tab', tabName);
+    if (tabName === 'keyboard') {
+      nativeEdit.focus();
+      caretToEnd(nativeEdit);
+    }
+  }
+
   // Restore last active tab from localStorage
   const savedTab = localStorage.getItem('active-tab');
   if (savedTab && ['numbers', 'letters', 'emoji', 'colors', 'keyboard'].includes(savedTab)) {
@@ -1143,14 +1360,9 @@
   document.getElementById('tab-bar').addEventListener('pointerdown', e => {
     const tab = e.target.closest('.tab');
     if (!tab) return;
-    const tabName = tab.dataset.tab;
-    activateTab(tabName);
-    localStorage.setItem('active-tab', tabName);
-    // Focus inside the user gesture so the native keyboard pops up
-    if (tabName === 'keyboard') {
-      nativeEdit.focus();
-      caretToEnd(nativeEdit);
-    }
+    // Focus happens inside switchTab, still within this gesture, so the native
+    // keyboard pops up on mobile.
+    switchTab(tab.dataset.tab);
   });
 
   // Clear the native editable field
