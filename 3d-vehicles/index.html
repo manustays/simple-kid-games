@@ -59,7 +59,16 @@
   <script type="module">
     import * as THREE from 'three';
     import { GLTFLoader } from './lib/GLTFLoader.js';
-    const P = ['#ff4d6d','#ff9f1c','#2ec4b6','#c77dff','#f72585','#7bdff2','#ffe74c','#6aff6a','#a8dadc','#b2f7ef'];
+
+    // Unreleased features. Flip to true to re-enable; the button is hidden and its
+    // handlers are never bound while false. Engine sounds have never been listened to
+    // on a real device, and the headlight placement is only eyeballed-good on some models.
+    const FEATURES = {
+      engineSound: false,
+      headlights: false
+    };
+
+    const P =['#ff4d6d','#ff9f1c','#2ec4b6','#c77dff','#f72585','#7bdff2','#ffe74c','#6aff6a','#a8dadc','#b2f7ef'];
     const VEHICLES = [
       { id: 'bus',         name: 'Bus',          emoji: '🚌', recipe: 'diesel', rot: Math.PI / 2 },
       { id: 'truck',       name: 'Truck',        emoji: '🚚', recipe: 'diesel' },
@@ -697,7 +706,11 @@
     bindBtn('backBtn', () => { popTone(); closeViewer(); });
     bindBtn('prevBtn', () => { popTone(); openVehicle(current - 1); });
     bindBtn('nextBtn', () => { popTone(); openVehicle(current + 1); });
-    bindBtn('lightsBtn', () => { popTone(); lightsAreOn ? lightsOff() : lightsOn(); });
+    if (FEATURES.headlights) {
+      bindBtn('lightsBtn', () => { popTone(); lightsAreOn ? lightsOff() : lightsOn(); });
+    } else {
+      lightsBtn.style.display = 'none';
+    }
 
     nameLbl.addEventListener('pointerdown', () => {
       nameLbl.classList.add('pressed');
@@ -705,13 +718,17 @@
       speak(VEHICLES[current]);
     });
 
-    engineBtn.addEventListener('pointerdown', (e) => {
-      engineBtn.setPointerCapture(e.pointerId);
-      engineBtn.classList.add('on');
-      engineStart(VEHICLES[current].recipe);
-    });
-    ['pointerup', 'pointercancel'].forEach(ev =>
-      engineBtn.addEventListener(ev, () => { engineBtn.classList.remove('on'); engineStop(); }));
+    if (FEATURES.engineSound) {
+      engineBtn.addEventListener('pointerdown', (e) => {
+        engineBtn.setPointerCapture(e.pointerId);
+        engineBtn.classList.add('on');
+        engineStart(VEHICLES[current].recipe);
+      });
+      ['pointerup', 'pointercancel'].forEach(ev =>
+        engineBtn.addEventListener(ev, () => { engineBtn.classList.remove('on'); engineStop(); }));
+    } else {
+      engineBtn.style.display = 'none';
+    }
 
     function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
