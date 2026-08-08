@@ -61,7 +61,7 @@
     import { GLTFLoader } from './lib/GLTFLoader.js';
     const P = ['#ff4d6d','#ff9f1c','#2ec4b6','#c77dff','#f72585','#7bdff2','#ffe74c','#6aff6a','#a8dadc','#b2f7ef'];
     const VEHICLES = [
-      { id: 'bus',         name: 'Bus',          emoji: '🚌', recipe: 'diesel' },
+      { id: 'bus',         name: 'Bus',          emoji: '🚌', recipe: 'diesel', rot: Math.PI / 2 },
       { id: 'truck',       name: 'Truck',        emoji: '🚚', recipe: 'diesel' },
       { id: 'towtruck',    name: 'Tow Truck',    emoji: '🛻', recipe: 'diesel' },
       { id: 'firetruck',   name: 'Fire Truck',   emoji: '🚒', recipe: 'diesel' },
@@ -132,8 +132,82 @@
     const spinner = new THREE.Group(); // yaw (rotation.y); models + light rig live here
     pivot.add(spinner);
     scene.add(pivot);
-    // placeholder until Task 6:
-    spinner.add(new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.8, 1), new THREE.MeshStandardMaterial({ color: 0xff4d6d })));
+    const frameHooks = [];
+    const loader = new GLTFLoader();
+    const modelCache = new Map();
+
+    function normalize(sceneRoot, rot = 0) {
+      const inner = new THREE.Group();
+      sceneRoot.rotation.y = rot;
+      inner.add(sceneRoot);
+      let box = new THREE.Box3().setFromObject(inner);
+      const size = box.getSize(new THREE.Vector3());
+      inner.scale.setScalar(2 / Math.max(size.x, size.y, size.z));
+      box = new THREE.Box3().setFromObject(inner);
+      const c = box.getCenter(new THREE.Vector3());
+      inner.position.set(-c.x, -box.min.y, -c.z);
+      const g = new THREE.Group();
+      g.add(inner);
+      g.userData.bbox = new THREE.Box3().setFromObject(inner);
+      return g;
+    }
+
+    function emojiSprite(emoji) {
+      const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+      const x = cv.getContext('2d');
+      x.font = '200px serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillText(emoji, 128, 140);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true }));
+      sp.scale.setScalar(2); sp.position.y = 1;
+      const g = new THREE.Group(); g.add(sp);
+      g.userData.bbox = new THREE.Box3(new THREE.Vector3(-1, 0, -0.5), new THREE.Vector3(1, 1.6, 0.5));
+      return g;
+    }
+
+    function blobShadow() {
+      const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+      const x = cv.getContext('2d');
+      const gr = x.createRadialGradient(64, 64, 8, 64, 64, 64);
+      gr.addColorStop(0, 'rgba(0,0,0,0.45)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      x.fillStyle = gr; x.fillRect(0, 0, 128, 128);
+      const m = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.2, 3.2),
+        new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthWrite: false })
+      );
+      m.rotation.x = -Math.PI / 2; m.position.y = 0.01;
+      return m;
+    }
+    spinner.add(blobShadow());
+
+    let modelRoot = null, entranceT = 1, loadSeq = 0;
+    function easeOutBack(t) { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
+    frameHooks.push(() => {
+      if (modelRoot && entranceT < 1) {
+        entranceT = Math.min(entranceT + 1 / 30, 1);
+        modelRoot.scale.setScalar(Math.max(easeOutBack(entranceT), 0.001));
+      }
+    });
+
+    async function showModel(v) {
+      const seq = ++loadSeq;
+      if (modelRoot) { spinner.remove(modelRoot); modelRoot = null; }
+      let g = modelCache.get(v.id);
+      if (!g) {
+        try {
+          const gltf = await loader.loadAsync(`models/${v.id}.glb`);
+          g = normalize(gltf.scene, v.rot || 0);
+        } catch (e) {
+          console.warn('model failed', v.id, e);
+          g = emojiSprite(v.emoji);
+        }
+        modelCache.set(v.id, g);
+      }
+      if (seq !== loadSeq) return; // user already moved on
+      modelRoot = g;
+      entranceT = 0;
+      modelRoot.scale.setScalar(0.001);
+      spinner.add(modelRoot);
+    }
 
     function resize() {
       const w = innerWidth, h = innerHeight;
@@ -143,7 +217,6 @@
     }
     addEventListener('resize', resize);
 
-    const frameHooks = [];
     let rafId = null, lastT = 0, viewerActive = false;
     function frame(t) {
       rafId = null;
@@ -167,7 +240,8 @@
       viewerActive = true;
       resize();
       startLoop();
-      // Task 6 adds: showModel(v). Task 9 adds: speak(v). Task 10 adds: lightsOff().
+      showModel(v);
+      // Task 9 adds: speak(v). Task 10 adds: lightsOff().
     }
     function closeViewer() {
       viewerActive = false;
