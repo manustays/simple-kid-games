@@ -7,6 +7,9 @@ are instead built procedurally from three.js primitives directly in `3d-vehicles
 `docs/3d-vehicles.md` for how those are constructed. There is no emoji fallback in normal operation;
 an emoji sprite only appears if a `.glb` fails to load at runtime, which is a bug, not a design.
 
+The 3D viewer itself is built on the vendored **three.js r170 — MIT — https://threejs.org**
+(`3d-vehicles/lib/three.module.min.js`); its MIT license notice is retained inside the file.
+
 | id | model name | author | source URL | license |
 |---|---|---|---|---|
 | ambulance | Ambulance (Car Kit) | Kenney | https://kenney.nl/assets/car-kit | CC0 1.0 |
@@ -31,8 +34,9 @@ an emoji sprite only appears if a `.glb` fails to load at runtime, which is a bu
 ## Note on bus and cementmixer/crane provenance
 
 Unlike the other rows, `bus`, `cementmixer` and `crane` were not downloadable as `.glb` from their
-source. Both packs are shared as public (no-login) Google Drive folders / a `.zip` containing `.obj`
-or `.fbx` meshes only. These were converted to self-contained GLB with two small one-off scripts
+source. These three models come from two packs (Quaternius's for `bus`; Majadroid's for
+`cementmixer` and `crane`), both shared as public (no-login) Google Drive folders / a `.zip`
+containing `.obj` or `.fbx` meshes only. These were converted to self-contained GLB with two small one-off scripts
 (stdlib only: `struct`, `json`, `zlib` — no new dependencies), not part of the build and not
 committed:
 
