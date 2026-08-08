@@ -42,7 +42,7 @@ Plus, **outside** `3d-vehicles/lib/`:
 
 **Why `utils/` sits next to `lib/` instead of inside it — read this before "cleaning it up":**
 `GLTFLoader.js` is vendored unmodified from the three.js source tree, and its own internal import
-statement is `import { mergeVertices } from '../utils/BufferGeometryUtils.js';` — a relative path
+statement is `import { toTrianglesDrawMode } from '../utils/BufferGeometryUtils.js';` — a relative path
 that assumes it lives inside a `lib/` (or `examples/jsm/loaders/`) folder with `utils/` as a
 *sibling* one level up... in this repo, `GLTFLoader.js` was placed directly in `3d-vehicles/lib/`,
 so `../utils/` resolves to `3d-vehicles/utils/`. This was a deliberate choice to avoid patching
