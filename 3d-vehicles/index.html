@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0f0a1e" />
+  <title>Vehicle World</title>
+  <link rel="manifest" href="manifest.json" />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { overflow: hidden; height: 100%; user-select: none; -webkit-user-select: none; }
+    body { background: #0f0a1e; font-family: 'Fredoka One', system-ui, sans-serif; }
+    #app { position: fixed; inset: 0; }
+    .screen { position: absolute; inset: 0; display: none; }
+    .screen.active { display: block; }
+    /* ===== GRID CSS ===== */
+    /* ===== VIEWER CSS ===== */
+  </style>
+</head>
+<body>
+  <div id="app">
+    <section id="gridScreen" class="screen active"></section>
+    <section id="viewerScreen" class="screen"></section>
+  </div>
+  <!-- ===== IMPORTMAP ===== -->
+  <script type="module">
+    /* ===== CONFIG ===== */
+    /* ===== AUDIO ===== */
+    /* ===== SPEECH ===== */
+    /* ===== GRID ===== */
+    /* ===== VIEWER ===== */
+    window.showScreen = (id) => {
+      document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+    };
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(r => r.update());
+    }
+  </script>
+</body>
+</html>
