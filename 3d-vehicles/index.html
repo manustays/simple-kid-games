@@ -26,8 +26,13 @@
     <section id="gridScreen" class="screen active"></section>
     <section id="viewerScreen" class="screen"></section>
   </div>
-  <!-- ===== IMPORTMAP ===== -->
+  <script type="importmap">
+    { "imports": { "three": "./lib/three.module.min.js" } }
+  </script>
   <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from './lib/GLTFLoader.js';
+    console.log('THREE', THREE.REVISION, 'loader', typeof GLTFLoader);
     /* ===== CONFIG ===== */
     /* ===== AUDIO ===== */
     /* ===== SPEECH ===== */

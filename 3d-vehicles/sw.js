@@ -2,7 +2,10 @@ const CACHE = '3d-vehicles-v1';
 const ASSETS = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './lib/three.module.min.js',
+  './lib/GLTFLoader.js',
+  './utils/BufferGeometryUtils.js'
 ];
 
 self.addEventListener('install', e => {
