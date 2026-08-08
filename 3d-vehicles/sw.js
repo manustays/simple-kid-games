@@ -8,6 +8,8 @@ const ASSETS = [
   './utils/BufferGeometryUtils.js',
   './models/ambulance.glb',
   './models/boat.glb',
+  './models/bus.glb',
+  './models/cementmixer.glb',
   './models/coupe.glb',
   './models/crane.glb',
   './models/firetruck.glb',

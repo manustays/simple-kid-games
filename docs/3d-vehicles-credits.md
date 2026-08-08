@@ -1,15 +1,17 @@
 # 3D Vehicles — Model Credits
 
-All 16 shipped models are **CC0 1.0 (Creative Commons Zero / Public Domain)**. No attribution is
-legally required, but creators are credited below as a courtesy. 7 of the 23 vehicle slots in the
+All 18 shipped models are **CC0 1.0 (Creative Commons Zero / Public Domain)**. No attribution is
+legally required, but creators are credited below as a courtesy. 5 of the 23 vehicle slots in the
 app have no model yet (see `task-5-report.md`) — those show their emoji fallback instead.
 
 | id | model name | author | source URL | license |
 |---|---|---|---|---|
 | ambulance | Ambulance (Car Kit) | Kenney | https://kenney.nl/assets/car-kit | CC0 1.0 |
 | boat | Boat Sail A (Watercraft Kit) | Kenney | https://kenney.nl/assets/watercraft-kit | CC0 1.0 |
+| bus | Bus | Quaternius | https://quaternius.com/packs/publictransport.html | CC0 1.0 |
+| cementmixer | Concrete Truck Red (from "Trucks", LowPoly House Construction Site) | Majadroid | https://opengameart.org/content/3d-house-construction-site-lowpoly-cc0 | CC0 1.0 |
 | coupe | Sedan Sports (Car Kit) | Kenney | https://kenney.nl/assets/car-kit | CC0 1.0 |
-| crane | Crane (Factory Kit) | Kenney | https://kenney.nl/assets/factory-kit | CC0 1.0 |
+| crane | Crane Ground (from "Crane-On-Ground", LowPoly House Construction Site) | Majadroid | https://opengameart.org/content/3d-house-construction-site-lowpoly-cc0 | CC0 1.0 |
 | firetruck | Firetruck (Car Kit) | Kenney | https://kenney.nl/assets/car-kit | CC0 1.0 |
 | hatchback | Hatchback Sports (Car Kit) | Kenney | https://kenney.nl/assets/car-kit | CC0 1.0 |
 | helicopter | Helicopter | kazuma | https://poly.pizza/m/EQJ2MECUbx | CC0 1.0 |
@@ -22,6 +24,31 @@ app have no model yet (see `task-5-report.md`) — those show their emoji fallba
 | truck | Delivery (Car Kit) | Kenney | https://kenney.nl/assets/car-kit | CC0 1.0 |
 | van | Van (Car Kit) | Kenney | https://kenney.nl/assets/car-kit | CC0 1.0 |
 | vintage | Sports Car | Quaternius | https://poly.pizza/m/OyqKvX9xNh | CC0 1.0 |
+
+## Note on bus and cementmixer/crane provenance
+
+Unlike the other rows, `bus`, `cementmixer` and `crane` were not downloadable as `.glb` from their
+source. Both packs are shared as public (no-login) Google Drive folders / a `.zip` containing `.obj`
+or `.fbx` meshes only. These were converted to self-contained GLB with two small one-off scripts
+(stdlib only: `struct`, `json`, `zlib` — no new dependencies), not part of the build and not
+committed:
+
+- **bus**: Quaternius's "Public Transport Pack" ships `Bus.obj` + `Bus.mtl`. The `.mtl` had lost its
+  per-part colors in export (every material came out as the same flat grey `Kd 0.64 0.64 0.64` — a
+  known Blender-OBJ-exporter artifact). Geometry and normals are the real, unmodified CC0 model; a
+  script parsed the OBJ, grouped triangles by material name, and applied a curated toy-bus color per
+  part (yellow body, blue-tinted windows, dark trim/tires) in place of the broken grey.
+- **cementmixer** and **crane**: Majadroid's "3D House Construction Site" pack ships Blender-exported
+  binary `.fbx` files whose per-part color comes from real UV-mapped texturing against a small shared
+  gradient palette image (Imphenzia's technique), embedded directly inside each `.fbx`. A second
+  script (a minimal binary-FBX node-tree reader) located the named `Model` → `Geometry` → texture
+  chain for "Concrete Truck Red" and "Crane Ground", extracted positions/normals/UVs and the
+  already-embedded palette PNG, and wrote a plain textured GLB — so these two ship with the pack's
+  actual authored colors, not a guess.
+
+`crane` replaces the Kenney Factory Kit crane originally shipped in this slot: the construction-site
+crane is a clearer, more recognizable freestanding tower crane for a toddler than Kenney's abstract
+industrial gantry arm, and came for free out of the same pack as `cementmixer`.
 
 ## Note on Kenney GLB texture embedding
 
