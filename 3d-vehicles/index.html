@@ -22,13 +22,36 @@
     .card.pressed { transform: scale(0.92); }
     .card .em { font-size: clamp(26px, 7vmin, 56px); line-height: 1; }
     .card .nm { color: var(--c); font-size: clamp(16px, 2.4vmin, 19px); text-align: center; line-height: 1.05; padding: 0 2px; overflow-wrap: anywhere; }
-    /* ===== VIEWER CSS ===== */
+    #viewerScreen { background: radial-gradient(ellipse at 50% 35%, #241b47 0%, #0f0a1e 70%); }
+    #c3d { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+    .rbtn { position: absolute; width: clamp(72px, 13vmin, 104px); height: clamp(72px, 13vmin, 104px); border-radius: 50%; border: 3px solid var(--c, #7bdff2); background: #1a1332; color: var(--c, #7bdff2); font-size: clamp(28px, 6vmin, 48px); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 12px color-mix(in srgb, var(--c, #7bdff2) 60%, transparent); touch-action: manipulation; cursor: pointer; transition: transform 0.1s; z-index: 2; }
+    .rbtn.pressed { transform: scale(0.92); }
+    #backBtn { top: calc(12px + env(safe-area-inset-top)); left: 12px; --c: #ff9f1c; }
+    #prevBtn { left: 8px; top: 50%; transform: translateY(-50%); --c: #7bdff2; }
+    #nextBtn { right: 8px; top: 50%; transform: translateY(-50%); --c: #7bdff2; }
+    #prevBtn.pressed { transform: translateY(-50%) scale(0.92); }
+    #nextBtn.pressed { transform: translateY(-50%) scale(0.92); }
+    #engineBtn { bottom: calc(16px + env(safe-area-inset-bottom)); right: 16px; --c: #ff4d6d; width: clamp(96px, 16vmin, 128px); height: clamp(96px, 16vmin, 128px); }
+    #lightsBtn { bottom: calc(16px + env(safe-area-inset-bottom)); left: 16px; --c: #ffe74c; width: clamp(96px, 16vmin, 128px); height: clamp(96px, 16vmin, 128px); }
+    #nameLbl { position: absolute; top: calc(14px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); color: #fff; font-size: clamp(28px, 6vmin, 52px); text-shadow: 0 0 14px var(--c, #fff); touch-action: manipulation; cursor: pointer; z-index: 2; transition: transform 0.1s; white-space: nowrap; }
+    #nameLbl.pressed { transform: translateX(-50%) scale(0.92); }
+    @keyframes pump { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+    #engineBtn.on { animation: pump 0.5s infinite; }
+    #lightsBtn.on { background: #ffe74c; color: #0f0a1e; box-shadow: 0 0 28px #ffe74c; }
   </style>
 </head>
 <body>
   <div id="app">
     <section id="gridScreen" class="screen active"></section>
-    <section id="viewerScreen" class="screen"></section>
+    <section id="viewerScreen" class="screen">
+      <canvas id="c3d"></canvas>
+      <div id="nameLbl"></div>
+      <div class="rbtn" id="backBtn">↩</div>
+      <div class="rbtn" id="prevBtn">◀</div>
+      <div class="rbtn" id="nextBtn">▶</div>
+      <div class="rbtn" id="engineBtn">🔊</div>
+      <div class="rbtn" id="lightsBtn">💡</div>
+    </section>
   </div>
   <script type="importmap">
     { "imports": { "three": "./lib/three.module.min.js" } }
@@ -36,7 +59,6 @@
   <script type="module">
     import * as THREE from 'three';
     import { GLTFLoader } from './lib/GLTFLoader.js';
-    console.log('THREE', THREE.REVISION, 'loader', typeof GLTFLoader);
     const P = ['#ff4d6d','#ff9f1c','#2ec4b6','#c77dff','#f72585','#7bdff2','#ffe74c','#6aff6a','#a8dadc','#b2f7ef'];
     const VEHICLES = [
       { id: 'bus',         name: 'Bus',          emoji: '🚌', recipe: 'diesel' },
@@ -94,8 +116,75 @@
       });
       gridEl.appendChild(card);
     });
-    function openVehicle(i) { console.log('open', VEHICLES[i].id); } // replaced in Task 4
     /* ===== VIEWER ===== */
+    const canvas = document.getElementById('c3d');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 50);
+    camera.position.set(0, 1.5, 4.4);
+    camera.lookAt(0, 0.7, 0);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x223355, 1.4));
+    const sun = new THREE.DirectionalLight(0xffffff, 2.0);
+    sun.position.set(3, 5, 2);
+    scene.add(sun);
+    const pivot = new THREE.Group();   // pitch (rotation.x)
+    const spinner = new THREE.Group(); // yaw (rotation.y); models + light rig live here
+    pivot.add(spinner);
+    scene.add(pivot);
+    // placeholder until Task 6:
+    spinner.add(new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.8, 1), new THREE.MeshStandardMaterial({ color: 0xff4d6d })));
+
+    function resize() {
+      const w = innerWidth, h = innerHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    addEventListener('resize', resize);
+
+    const frameHooks = [];
+    let rafId = null, lastT = 0, viewerActive = false;
+    function frame(t) {
+      rafId = null;
+      if (!viewerActive || document.hidden) return;
+      const dt = Math.min((t - lastT) / 1000, 0.05); lastT = t;
+      frameHooks.forEach(fn => fn(dt));
+      renderer.render(scene, camera);
+      rafId = requestAnimationFrame(frame);
+    }
+    function startLoop() { if (!rafId) { lastT = performance.now(); rafId = requestAnimationFrame(frame); } }
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) startLoop(); });
+
+    let current = 0;
+    function openVehicle(i) {
+      current = (i + VEHICLES.length) % VEHICLES.length;
+      const v = VEHICLES[current];
+      const lbl = document.getElementById('nameLbl');
+      lbl.textContent = v.name;
+      lbl.style.setProperty('--c', v.color);
+      showScreen('viewerScreen');
+      viewerActive = true;
+      resize();
+      startLoop();
+      // Task 6 adds: showModel(v). Task 9 adds: speak(v). Task 10 adds: lightsOff().
+    }
+    function closeViewer() {
+      viewerActive = false;
+      showScreen('gridScreen');
+    }
+    function bindBtn(id, fn) {
+      const el = document.getElementById(id);
+      el.addEventListener('pointerdown', () => {
+        el.classList.add('pressed');
+        setTimeout(() => el.classList.remove('pressed'), 120);
+        fn();
+      });
+    }
+    bindBtn('backBtn', () => { popTone(); closeViewer(); });
+    bindBtn('prevBtn', () => { popTone(); openVehicle(current - 1); });
+    bindBtn('nextBtn', () => { popTone(); openVehicle(current + 1); });
+
     window.showScreen = (id) => {
       document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
     };
