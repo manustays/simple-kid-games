@@ -24,16 +24,18 @@
     .card .nm { color: var(--c); font-size: clamp(16px, 2.4vmin, 19px); text-align: center; line-height: 1.05; padding: 0 2px; overflow-wrap: anywhere; }
     #viewerScreen { background: radial-gradient(ellipse at 50% 35%, #241b47 0%, #0f0a1e 70%); }
     #c3d { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
-    .rbtn { position: absolute; width: clamp(72px, 13vmin, 104px); height: clamp(72px, 13vmin, 104px); border-radius: 50%; border: 3px solid var(--c, #7bdff2); background: #1a1332; color: var(--c, #7bdff2); font-size: clamp(28px, 6vmin, 48px); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 12px color-mix(in srgb, var(--c, #7bdff2) 60%, transparent); touch-action: manipulation; cursor: pointer; transition: transform 0.1s; z-index: 2; }
+    .rbtn { --btn: clamp(72px, 13vmin, 104px); position: absolute; width: var(--btn); height: var(--btn); border-radius: 50%; border: 3px solid var(--c, #7bdff2); background: #1a1332; color: var(--c, #7bdff2); font-size: clamp(28px, 6vmin, 48px); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 12px color-mix(in srgb, var(--c, #7bdff2) 60%, transparent); touch-action: manipulation; cursor: pointer; transition: transform 0.1s; z-index: 2; }
     .rbtn.pressed { transform: scale(0.92); }
     #backBtn { top: calc(12px + env(safe-area-inset-top)); left: 12px; --c: #ff9f1c; }
-    #prevBtn { left: 8px; top: 50%; transform: translateY(-50%); --c: #7bdff2; }
-    #nextBtn { right: 8px; top: 50%; transform: translateY(-50%); --c: #7bdff2; }
-    #prevBtn.pressed { transform: translateY(-50%) scale(0.92); }
-    #nextBtn.pressed { transform: translateY(-50%) scale(0.92); }
-    #engineBtn { bottom: calc(16px + env(safe-area-inset-bottom)); right: 16px; --c: #ff4d6d; width: clamp(96px, 16vmin, 128px); height: clamp(96px, 16vmin, 128px); }
-    #lightsBtn { bottom: calc(16px + env(safe-area-inset-bottom)); left: 16px; --c: #ffe74c; width: clamp(96px, 16vmin, 128px); height: clamp(96px, 16vmin, 128px); }
-    #nameLbl { position: absolute; top: calc(14px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); max-width: calc(100% - 200px); color: #fff; font-size: clamp(28px, 6vmin, 52px); text-align: center; text-shadow: 0 0 14px var(--c, #fff); touch-action: manipulation; cursor: pointer; z-index: 2; transition: transform 0.1s; }
+    /* prev/next sit as a pair in the top-right; prev is offset left by one button plus the gap */
+    #nextBtn { top: calc(12px + env(safe-area-inset-top)); right: 12px; --c: #7bdff2; }
+    #prevBtn { top: calc(12px + env(safe-area-inset-top)); right: calc(12px + var(--btn) + 10px); --c: #7bdff2; }
+    #engineBtn { bottom: calc(16px + env(safe-area-inset-bottom)); right: 16px; --c: #ff4d6d; --btn: clamp(96px, 16vmin, 128px); }
+    #lightsBtn { bottom: calc(16px + env(safe-area-inset-bottom)); left: 16px; --c: #ffe74c; --btn: clamp(96px, 16vmin, 128px); }
+    /* ponytail: max-width assumes the bottom corners are free. If FEATURES.engineSound or
+       .headlights is re-enabled, those buttons take the bottom corners and this needs narrowing
+       (or the label moving above them). */
+    #nameLbl { position: absolute; bottom: calc(16px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); max-width: calc(100% - 32px); color: #fff; font-size: clamp(28px, 6vmin, 52px); text-align: center; text-shadow: 0 0 14px var(--c, #fff); touch-action: manipulation; cursor: pointer; z-index: 2; transition: transform 0.1s; }
     #nameLbl.pressed { transform: translateX(-50%) scale(0.92); }
     @keyframes pump { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
     #engineBtn.on { animation: pump 0.5s infinite; }
@@ -78,25 +80,24 @@
       { id: 'van',         name: 'Van',          emoji: '🚐', recipe: 'diesel' },
       { id: 'cementmixer', name: 'Cement Mixer', emoji: '🌀', recipe: 'diesel' },
       { id: 'tractor',     name: 'Tractor',      emoji: '🚜', recipe: 'heavyDiesel' },
-      { id: 'excavator',   name: 'Excavator',    emoji: '⛏️', recipe: 'heavyDiesel',
-        lightsOverride: { head: [[0.02, 0.58, 0.15]], tail: [[-0.05, 0.85, -0.35]] } },
-      { id: 'digger',      name: 'Digger',       emoji: '🚧', recipe: 'heavyDiesel' },
+      // { id: 'excavator',   name: 'Excavator',    emoji: '⛏️', recipe: 'heavyDiesel', lightsOverride: { head: [[0.02, 0.58, 0.15]], tail: [[-0.05, 0.85, -0.35]] } },
+      // { id: 'digger',      name: 'Digger',       emoji: '🚧', recipe: 'heavyDiesel' },
       { id: 'crane',       name: 'Crane',        emoji: '🏗️', recipe: 'heavyDiesel',
         lightsOverride: { head: [[0.12, 1.3, 0.08]], tail: [[-0.15, 1.48, -0.05]] } },
-      { id: 'roadroller',  name: 'Road Roller',  emoji: '🛞', recipe: 'heavyDiesel' },
+      // { id: 'roadroller',  name: 'Road Roller',  emoji: '🛞', recipe: 'heavyDiesel' },
       { id: 'train',       name: 'Train',        emoji: '🚂', recipe: 'train' },
       { id: 'metro',       name: 'Metro',        emoji: '🚇', recipe: 'electric' },
-      { id: 'rickshaw',    name: 'Auto Rickshaw', emoji: '🛺', recipe: 'putt' },
+      // { id: 'rickshaw',    name: 'Auto Rickshaw', emoji: '🛺', recipe: 'putt' },
       { id: 'boat',        name: 'Boat',         emoji: '⛵', recipe: 'boat',
         lightsOverride: { head: [[0, 0.45, 0.55]], tail: [[0, 0.5, -0.55]] } },
       { id: 'helicopter',  name: 'Helicopter',   emoji: '🚁', recipe: 'helicopter',
         lightsOverride: { head: [[0, 0.35, 0.95]], tail: [[0, 0.42, -0.9]] } },
-      { id: 'jeep',        name: 'Jeep',         emoji: '🚙', recipe: 'petrol' },
-      { id: 'suv',         name: 'SUV',          speechName: 'S U V', emoji: '🚘', recipe: 'petrol' },
-      { id: 'sedan',       name: 'Sedan',        emoji: '🚗', recipe: 'petrol' },
+      { id: 'suv',        name: 'Jeep',         emoji: '🚙', recipe: 'petrol' },
+      { id: 'jeep',         name: 'SUV',          speechName: 'S U V', emoji: '🚘', recipe: 'petrol' },
+      { id: 'vintage',       name: 'Sedan',        emoji: '🚗', recipe: 'petrol' },
       { id: 'coupe',       name: 'Coupe',        emoji: '🏎️', recipe: 'petrol' },
       { id: 'hatchback',   name: 'Hatchback',    emoji: '🚕', recipe: 'petrol' },
-      { id: 'vintage',     name: 'Vintage Car',  emoji: '🚗', recipe: 'petrol' }
+      // { id: 'vintage',     name: 'Vintage Car',  emoji: '🚗', recipe: 'petrol' }
     ];
     VEHICLES.forEach((v, i) => { v.color = P[i % P.length]; });
     /* ===== AUDIO ===== */
@@ -222,9 +223,12 @@
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 50);
-    const CAM_BASE_ASPECT = 0.75, CAM_BASE_Y = 1.5, CAM_BASE_Z = 4.4; // framing tuned at this aspect; resize() pulls back below it
-    camera.position.set(0, CAM_BASE_Y, CAM_BASE_Z);
-    camera.lookAt(0, 0.7, 0);
+    // Framing tuned at CAM_BASE_ASPECT; resize() pulls back below it. Models are seated on the
+    // ground (y=0) so the shadow blob lines up, which means their vertical centre differs per
+    // vehicle — aimCamera() targets that centre so a short car and a tall crane are both centred.
+    // CAM_ELEV is the camera's height ABOVE the target, so the viewing angle stays constant.
+    const CAM_BASE_ASPECT = 0.75, CAM_BASE_Z = 4.4, CAM_ELEV = 0.8, CAM_DEFAULT_TARGET_Y = 0.7;
+    let camTargetY = CAM_DEFAULT_TARGET_Y;
     scene.add(new THREE.HemisphereLight(0xffffff, 0x223355, 1.4));
     const sun = new THREE.DirectionalLight(0xffffff, 2.0);
     sun.position.set(3, 5, 2);
@@ -584,6 +588,10 @@
       entranceT = 0;
       modelRoot.scale.setScalar(0.001);
       spinner.add(modelRoot);
+      // centre this model vertically: it sits on the ground, so aim at half its height
+      const bb = modelRoot.userData.bbox;
+      camTargetY = bb ? (bb.min.y + bb.max.y) / 2 : CAM_DEFAULT_TARGET_Y;
+      aimCamera();
       // ponytail: no lightsOff() here — showModel's only caller (openVehicle) already calls
       // lightsOff() synchronously right after, so a call here would always be a no-op
     }
@@ -643,17 +651,19 @@
       spinner.add(lightRig);
     }
 
+    function aimCamera() {
+      // narrower-than-design aspect (phones in portrait) clips long vehicles broadside; pull the
+      // camera back proportionally so the full model stays in frame at every yaw angle
+      const k = Math.max(1, CAM_BASE_ASPECT / camera.aspect);
+      camera.position.set(0, camTargetY + CAM_ELEV * k, CAM_BASE_Z * k);
+      camera.lookAt(0, camTargetY, 0);
+      camera.updateProjectionMatrix();
+    }
     function resize() {
       const w = innerWidth, h = innerHeight;
       renderer.setSize(w, h, false);
-      const aspect = w / h;
-      camera.aspect = aspect;
-      // narrower-than-design aspect (phones in portrait) clips long vehicles broadside; pull the
-      // camera back proportionally so the full model stays in frame at every yaw angle
-      const k = Math.max(1, CAM_BASE_ASPECT / aspect);
-      camera.position.set(0, CAM_BASE_Y * k, CAM_BASE_Z * k);
-      camera.lookAt(0, 0.7, 0);
-      camera.updateProjectionMatrix();
+      camera.aspect = w / h;
+      aimCamera();
     }
     addEventListener('resize', resize);
 
