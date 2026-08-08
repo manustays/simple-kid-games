@@ -133,6 +133,43 @@
     pivot.add(spinner);
     scene.add(pivot);
     const frameHooks = [];
+
+    /* ===== ROTATION: drag, keyboard, idle auto-spin ===== */
+    let yawVel = 0, autoSpin = true, idleTimer = null;
+    const PITCH_MAX = 0.55;
+    function markInteract() {
+      autoSpin = false;
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => { autoSpin = true; }, 3000);
+    }
+    let dragId = null, lastX = 0, lastY = 0;
+    canvas.addEventListener('pointerdown', (e) => {
+      dragId = e.pointerId; lastX = e.clientX; lastY = e.clientY;
+      canvas.setPointerCapture(e.pointerId);
+      markInteract();
+    });
+    canvas.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== dragId) return;
+      spinner.rotation.y += (e.clientX - lastX) * 0.012;
+      pivot.rotation.x = Math.max(-PITCH_MAX, Math.min(PITCH_MAX, pivot.rotation.x + (e.clientY - lastY) * 0.008));
+      lastX = e.clientX; lastY = e.clientY;
+      markInteract();
+    });
+    canvas.addEventListener('pointerup', () => { dragId = null; });
+    canvas.addEventListener('pointercancel', () => { dragId = null; });
+    addEventListener('keydown', (e) => {
+      if (!viewerActive) return;
+      const k = e.key;
+      if (k === 'ArrowLeft') spinner.rotation.y -= 0.09;
+      else if (k === 'ArrowRight') spinner.rotation.y += 0.09;
+      else if (k === 'ArrowUp') pivot.rotation.x = Math.max(-PITCH_MAX, pivot.rotation.x - 0.05);
+      else if (k === 'ArrowDown') pivot.rotation.x = Math.min(PITCH_MAX, pivot.rotation.x + 0.05);
+      else return;
+      e.preventDefault();
+      markInteract();
+    });
+    frameHooks.push((dt) => { if (autoSpin) spinner.rotation.y += dt * 0.35; });
+
     const loader = new GLTFLoader();
     const modelCache = new Map();
 
@@ -471,6 +508,8 @@
       resize();
       startLoop();
       showModel(v);
+      spinner.rotation.y = -0.6; pivot.rotation.x = 0.15;
+      autoSpin = false; markInteract();
       // Task 9 adds: speak(v). Task 10 adds: lightsOff().
     }
     function closeViewer() {
