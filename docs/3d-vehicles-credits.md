@@ -1,11 +1,14 @@
 # 3D Vehicles — Model Credits
 
-All 18 shipped `.glb` models are **CC0 1.0 (Creative Commons Zero / Public Domain)**. No attribution
-is legally required, but creators are credited below as a courtesy. The remaining 5 of the 23
-vehicles (Tow Truck, Excavator, Digger, Road Roller, Auto Rickshaw) have no CC0 model available and
-are instead built procedurally from three.js primitives directly in `3d-vehicles/index.html` — see
-`docs/3d-vehicles.md` for how those are constructed. There is no emoji fallback in normal operation;
-an emoji sprite only appears if a `.glb` fails to load at runtime, which is a bug, not a design.
+All 17 shipped `.glb` models are **CC0 1.0 (Creative Commons Zero / Public Domain)**. No attribution
+is legally required, but creators are credited below as a courtesy.
+
+18 vehicles are active: these 17 sourced models plus the Tow Truck, which has no CC0 model available
+and is built procedurally from three.js primitives directly in `3d-vehicles/index.html` — see
+`docs/3d-vehicles.md` for how that works. Four further procedural builders (Excavator, Digger, Road
+Roller, Auto Rickshaw) still exist in the code but their `VEHICLES` entries are commented out; they
+were not good enough to ship. There is no emoji fallback in normal operation; an emoji sprite only
+appears if a `.glb` fails to load at runtime, which is a bug, not a design.
 
 The 3D viewer itself is built on the vendored **three.js r170 — MIT — https://threejs.org**
 (`3d-vehicles/lib/three.module.min.js`); its MIT license notice is retained inside the file.
@@ -23,7 +26,6 @@ The 3D viewer itself is built on the vendored **three.js r170 — MIT — https:
 | helicopter | Helicopter | kazuma | https://poly.pizza/m/EQJ2MECUbx | CC0 1.0 |
 | jeep | SUV Luxury (Car Kit) | Kenney | https://kenney.nl/assets/car-kit | CC0 1.0 |
 | metro | Train Electric Subway A (Train Kit) | Kenney | https://kenney.nl/assets/train-kit | CC0 1.0 |
-| sedan | Sedan (Car Kit) | Kenney | https://kenney.nl/assets/car-kit | CC0 1.0 |
 | suv | SUV (Car Kit) | Kenney | https://kenney.nl/assets/car-kit | CC0 1.0 |
 | tractor | Tractor (Car Kit) | Kenney | https://kenney.nl/assets/car-kit | CC0 1.0 |
 | train | Train Locomotive A (Train Kit) | Kenney | https://kenney.nl/assets/train-kit | CC0 1.0 |

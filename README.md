@@ -17,7 +17,7 @@ Live at: **[https://kids.abhi.am](https://kids.abhi.am)**
 | Folder | Name | Description |
 |--------|------|-------------|
 | [`type/`](type/) | Typing Fun! | Learn to speak letters, numbers, objects, colors, shapes, and more by typing |
-| [`3d-vehicles/`](3d-vehicles/) | Vehicle World | 23 rotatable 3D vehicles with engine sounds, lights and spoken names |
+| [`3d-vehicles/`](3d-vehicles/) | Vehicle World | 18 rotatable 3D vehicles with spoken names |
 
 Maintainer guide (file layout, adding a new vehicle): [`docs/3d-vehicles.md`](docs/3d-vehicles.md).
 

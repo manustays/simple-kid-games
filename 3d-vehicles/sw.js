@@ -17,7 +17,6 @@ const ASSETS = [
   './models/helicopter.glb',
   './models/jeep.glb',
   './models/metro.glb',
-  './models/sedan.glb',
   './models/suv.glb',
   './models/tractor.glb',
   './models/train.glb',

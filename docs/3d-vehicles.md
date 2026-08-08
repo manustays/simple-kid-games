@@ -1,14 +1,19 @@
 # 3D Vehicles — Maintainer's Guide
 
-`3d-vehicles/` ("Vehicle World") is a fullscreen PWA for toddlers: a grid of 23 vehicles, each
-opening into a 3D viewer where the child can spin the model, hear an engine sound while holding a
-button, toggle headlights/taillights, and hear the vehicle's name spoken aloud. This doc explains
-how the activity is built so a future contributor can safely add, fix, or extend it. It assumes no
-prior familiarity with the code.
+`3d-vehicles/` ("Vehicle World") is a fullscreen PWA for toddlers: a grid of 18 vehicles, each
+opening into a 3D viewer where the child can spin the model and hear the vehicle's name spoken
+aloud. This doc explains how the activity is built so a future contributor can safely add, fix, or
+extend it. It assumes no prior familiarity with the code.
+
+Two features are built and working but **disabled** behind the `FEATURES` object at the top of the
+module script: `engineSound` (a synthesized per-vehicle engine while the 🔊 button is held) and
+`headlights` (a 💡 toggle for a headlight/taillight rig). While a flag is `false` its button is
+hidden and its handlers are never bound. Flip the flag to `true` to bring it back — nothing was
+deleted. The sections below document both, since they are still in the code.
 
 ## What it does, from the child's side
 
-1. Grid screen: 23 colorful cards (emoji + name), 4 columns, no scrolling.
+1. Grid screen: 18 colorful cards (emoji + name), 4 columns, no scrolling.
 2. Tapping a card opens the viewer: the 3D model animates in, its name is spoken, and it starts an
    idle auto-spin.
 3. Drag on the canvas to rotate (yaw + limited pitch); arrow keys do the same; after 3s of no
@@ -30,7 +35,7 @@ prior familiarity with the code.
 │   ├── three.module.min.js       ← vendored three.js 0.170.0
 │   └── GLTFLoader.js             ← vendored three.js addon
 └── models/
-    └── *.glb                     ← 18 CC0 model files, one per sourced vehicle
+    └── *.glb                     ← 17 CC0 model files, one per sourced vehicle
 ```
 
 Plus, **outside** `3d-vehicles/lib/`:
@@ -78,8 +83,8 @@ Whenever you add a new file the app fetches at runtime — a new `.glb`, a new `
 file — **you must add its path to the `ASSETS` array in `sw.js`**, or that file will 404 offline
 even though it loads fine online (masking the bug until someone tests offline).
 
-The five procedural vehicles (see below) are pure code inside `index.html` — they have no separate
-file, so they are correctly absent from `ASSETS`.
+The procedural vehicles (see below) are pure code inside `index.html` — they have no separate file,
+so they are correctly absent from `ASSETS`.
 
 ## The `VEHICLES` array
 
@@ -89,12 +94,17 @@ Everything about each vehicle lives in one JS array literal near the top of the 
 ```js
 const VEHICLES = [
   { id: 'bus', name: 'Bus', emoji: '🚌', recipe: 'diesel', rot: Math.PI / 2 },
-  { id: 'excavator', name: 'Excavator', emoji: '⛏️', recipe: 'heavyDiesel',
-    lightsOverride: { head: [[0.02, 0.58, 0.15]], tail: [[-0.05, 0.85, -0.35]] } },
-  { id: 'suv', name: 'SUV', speechName: 'S U V', emoji: '🚘', recipe: 'petrol' },
-  // ...23 entries total
+  { id: 'crane', name: 'Crane', emoji: '🏗️', recipe: 'heavyDiesel',
+    lightsOverride: { head: [[0.12, 1.3, 0.08]], tail: [[-0.15, 1.48, -0.05]] } },
+  { id: 'jeep', name: 'SUV', speechName: 'S U V', emoji: '🚘', recipe: 'petrol' },
+  // ...18 active entries, plus a few commented-out ones
 ];
 ```
+
+Note that `id` and `name` are independent: `id` picks the model file or builder, `name` is what the
+child reads and hears. Several car entries deliberately pair a label with a differently-named model
+because that model simply looks more like the labelled vehicle — `suv.glb` is labelled "Jeep",
+`jeep.glb` is labelled "SUV", `vintage.glb` is labelled "Sedan". Don't "fix" these to match.
 
 Fields:
 
@@ -133,7 +143,9 @@ Sources, in the order worth trying:
 and "compactor", "cement mixer" and "concrete mixer". Searching one name only will miss models.
 
 **What is genuinely hard to find under CC0** (as of the 2026-08 sweep): tow truck, excavator,
-bulldozer/digger, road roller, auto rickshaw. All five are built procedurally instead — see Route B.
+bulldozer/digger, road roller, auto rickshaw. All five were built procedurally instead — see Route B
+— though only the tow truck was good enough to keep enabled. If you find good CC0 models for any of
+them, swapping one in is clean: delete its `BUILDERS` entry and follow Route A.
 If you find good CC0 models for these, replacing a procedural build with a real model is a clean
 swap: delete the `BUILDERS` entry, add the file plus its `ASSETS` line and credits row.
 
@@ -177,7 +189,10 @@ There are two routes, depending on whether a CC0 `.glb` model exists for it.
 
 Five vehicles (Tow Truck, Excavator, Digger, Road Roller, Auto Rickshaw) have no available CC0 model
 and are instead assembled from three.js primitive meshes (boxes, cylinders, cones, torus) directly
-in `index.html`. Look at `buildTowTruck()` or `buildRickshaw()` as templates — the pattern is:
+in `index.html`. All five builders are still in the code, but only the Tow Truck is enabled — the
+other four read poorly enough that their `VEHICLES` entries are commented out. Re-enabling one is a
+matter of uncommenting its entry, but improve the geometry first. Look at `buildTowTruck()` as the
+template — the pattern is:
 
 1. Write a `buildYourVehicle()` function that creates a `THREE.Group`, adds primitive `THREE.Mesh`
    objects (via the `mesh(geometry, color)` helper) positioned/rotated to form a recognizable
@@ -213,11 +228,12 @@ diesel: { osc: 'sawtooth', f0: 52, f1: 52, ramp: 0, noise: 0.25, nfreq: 220, pit
 | `pitchLfo` | `[rate, depth]` or `null`. When set, a low-frequency oscillator wobbles the main oscillator's frequency by ± `depth` Hz at `rate` Hz — simulates an uneven idle/chug. |
 | `ampLfo` | `[rate, depth]` or `null`. When set, a second LFO modulates the overall output gain between `1 - depth` and `1` at `rate` Hz — simulates a throbbing/pulsing volume (train chuff, helicopter rotor thump, boat engine put-put). |
 
-The 8 recipes and their assigned vehicles (from `progress.md`'s self-review): 7 vehicles use
-`diesel` (bus, truck, towtruck, firetruck, ambulance, van, cementmixer), 5 use `heavyDiesel`
-(tractor, excavator, digger, crane, roadroller), 6 use `petrol` (jeep, suv, sedan, coupe,
-hatchback, vintage), and `train`, `electric` (metro), `putt` (rickshaw), `boat`, and `helicopter`
-are each used by exactly one vehicle.
+All 8 recipes still exist, but only 7 are reachable from the currently-active roster: 7 vehicles use
+`diesel` (bus, truck, towtruck, firetruck, ambulance, van, cementmixer), 2 use `heavyDiesel`
+(tractor, crane), 5 use `petrol` (the five cars), and `train`, `electric` (metro), `boat` and
+`helicopter` are each used by exactly one vehicle. `putt` currently has no vehicle — it belonged to
+the auto rickshaw, whose entry is commented out. None of this is audible today anyway, since
+`FEATURES.engineSound` is `false`.
 
 ## `normalize()` — how a model gets framed
 
@@ -252,12 +268,33 @@ The scale factor is `Math.min(2 / maxDimension, 1.5 / size.y)` — two competing
 
 Why both exist: with only the first cap, a tall, narrow model (the crane's tower, the boat's mast)
 gets scaled so its largest dimension — which for these is height, not width or depth — becomes 2
-units. That makes the model tall enough to visually clip into the name label at the top of the
-viewer screen. Capping height separately at 1.5 catches exactly this case: for a tall/thin model,
-`1.5 / size.y` is the smaller (more restrictive) of the two ratios and wins the `Math.min`, shrinking
-the whole model further so it clears the label. For a normal wide/long vehicle (a car, a bus), width
-or depth is the largest dimension, so `2 / maxDimension` is already ≤ `1.5 / size.y` and wins
-unchanged — the height cap only ever kicks in for the unusually tall models it was added for.
+units, tall enough to run off the top of the viewer. Capping height separately at 1.5 catches
+exactly this case: for a tall/thin model, `1.5 / size.y` is the smaller (more restrictive) of the
+two ratios and wins the `Math.min`, shrinking the whole model further. For a normal wide/long
+vehicle (a car, a bus), width or depth is the largest dimension, so `2 / maxDimension` is already
+≤ `1.5 / size.y` and wins unchanged — the height cap only ever kicks in for the unusually tall
+models it was added for. (The cap was originally added when the name label sat at the top of the
+screen; the label has since moved to the bottom, but the cap still earns its place by stopping tall
+models overrunning the frame.)
+
+### Camera framing — `aimCamera()`
+
+Because `normalize()` seats every model on the ground rather than centring it vertically (the ground
+shadow depends on that), each vehicle's vertical *centre* sits at a different height — roughly 0.27
+for a low car, 0.75 for the crane. A camera aimed at one fixed height would therefore centre only
+one of them and leave the rest sitting low in frame.
+
+`aimCamera()` fixes this by targeting the current model's bounding-box centre, stored in
+`camTargetY` and refreshed in `showModel()` each time a model is attached. The camera's height is
+expressed as `camTargetY + CAM_ELEV * k` — an offset *above* the target rather than an absolute
+value — so the three-quarter-from-above viewing angle is identical for every vehicle and only the
+framing shifts. Since the camera looks directly at the bbox centre, that centre lands on the centre
+of the viewport by construction, whatever the model.
+
+The same function applies `k = max(1, CAM_BASE_ASPECT / aspect)`, which pulls the camera back on
+narrower-than-design aspect ratios. Without it, a phone in portrait clips the nose and tail off long
+vehicles as the idle auto-spin swings them broadside. `aimCamera()` is called from both `resize()`
+and `showModel()`, which is why it is a separate function rather than living inside `resize()`.
 
 After scaling, the box is recomputed and the model is re-centered on X/Z and dropped so its lowest
 point sits exactly at `y = 0` (`inner.position.set(-c.x, -box.min.y, -c.z)`) — this is what makes
@@ -287,11 +324,12 @@ const pos = override || {
 
 This works fine for roughly car-shaped, roughly-centered models. It breaks down for models that are
 asymmetric, off-center, or shaped very differently from a car — a bounding-box corner isn't
-necessarily anywhere near an actual headlight. Four vehicles currently need `lightsOverride` with
+necessarily anywhere near an actual headlight. Four vehicles carry a `lightsOverride` with
 hand-placed `[x, y, z]` coordinates (in the model's local, normalized space) because the heuristic
-put lamps somewhere visibly wrong:
+put lamps somewhere visibly wrong — three of them still active, plus the commented-out excavator:
 
-- **excavator** — heuristic put lights on the tracked base corners instead of the cab.
+- **excavator** — heuristic put lights on the tracked base corners instead of the cab. (Entry
+  currently commented out, but the override is kept with it for whenever it returns.)
 - **crane** — heuristic put lights near ground level on a model whose visual mass is a tall tower.
 - **boat** — heuristic's left/right corners don't correspond to bow/stern on a narrow hull.
 - **helicopter** — heuristic's corners land on the rotor blades, not the fuselage nose/tail.
