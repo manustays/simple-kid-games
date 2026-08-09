@@ -153,10 +153,54 @@ Rules:
 </head>
 ```
 
-### Required SW registration (last thing before `</body>`)
+### Required wake lock + SW registration (last thing before `</body>`)
+
+The wake lock keeps the screen lit while a toddler watches without touching, and releases 3 minutes after the last interaction so an abandoned tablet still sleeps. Copy verbatim — no external files, no-ops where the Screen Wake Lock API is unsupported.
 
 ```html
 <script>
+  // Hold a screen wake lock, released 3 minutes after the last interaction
+  if ('wakeLock' in navigator) {
+    const IDLE_MS = 180000;
+    let sentinel = null, pending = false, lastInteraction = Date.now(), idleTimer = null;
+
+    /** Release the current wake lock, letting the screen time out normally. */
+    const releaseLock = () => {
+      sentinel?.release();
+      sentinel = null;
+    };
+
+    /** Acquire a wake lock if the page is visible and still inside the idle window. */
+    const acquireLock = async () => {
+      if (sentinel || pending) return;
+      if (document.visibilityState !== 'visible') return;
+      if (Date.now() - lastInteraction > IDLE_MS) return;
+      pending = true;
+      try {
+        const lock = await navigator.wakeLock.request('screen');
+        sentinel = lock;
+        // The OS drops the lock when the tab hides — only clear if it is still ours.
+        lock.addEventListener('release', () => { if (sentinel === lock) sentinel = null; });
+      } catch (err) {
+        // Denied (battery saver, backgrounded) — screen just times out as usual.
+      } finally {
+        pending = false;
+      }
+    };
+
+    const onInteraction = () => {
+      lastInteraction = Date.now();
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(releaseLock, IDLE_MS);
+      acquireLock();
+    };
+
+    ['pointerdown', 'keydown'].forEach(type => addEventListener(type, onInteraction, { passive: true }));
+    document.addEventListener('visibilitychange', acquireLock);
+    idleTimer = setTimeout(releaseLock, IDLE_MS);
+    acquireLock();
+  }
+
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(registration => {
       registration.update();
