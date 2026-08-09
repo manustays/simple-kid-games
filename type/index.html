@@ -970,6 +970,10 @@
 
   // Build Emoji keyboard
   // MARK: Emojies
+  // Keys that must stay dead on the emoji tab: modifiers and lock keys would
+  // otherwise fire an emoji every time they're pressed alongside a letter.
+  const INERT_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'AltGraph',
+    'ContextMenu', 'NumLock', 'ScrollLock', 'Dead', 'Unidentified', 'Process', 'Compose']);
   let emojiKeys = null;   // assigned below — physical-keyboard bridge for the emoji tab
   (function() {
     const emojiData = [
@@ -1095,6 +1099,13 @@
       speak(btn.dataset.name);
     }
 
+    /** Type a random emoji — for keys that don't map to anything. */
+    function typeRandomEmoji() {
+      const i = Math.floor(Math.random() * buttons.length);
+      setEmojiSel(i);
+      typeEmoji(i);
+    }
+
     // Grid is `auto-fill`, so the column count changes with viewport width.
     function emojiCols() {
       return Math.max(1, getComputedStyle(kb).gridTemplateColumns.split(' ').length);
@@ -1168,10 +1179,18 @@
             if (buttons[i].dataset.name.toLowerCase().startsWith(letter)) {
               setEmojiSel(i);
               typeEmoji(i);
-              break;
+              return true;
             }
           }
-          return true;   // swallow unmatched letters rather than typing stray text
+          typeRandomEmoji();   // no emoji name starts with this letter
+          return true;
+        }
+
+        // Punctuation/symbols, and named keys that aren't modifiers, become a
+        // surprise emoji so no keypress feels dead.
+        if (k.length === 1 || !INERT_KEYS.has(k) && !/^F\d+$/.test(k)) {
+          typeRandomEmoji();
+          return true;
         }
 
         return false;
@@ -1244,6 +1263,11 @@
     return name ? [...btns].find(b => b.dataset.name === name) : null;
   }
 
+  // Physical keys currently held down, so auto-repeat types only once.
+  const heldKeys = new Set();
+  addEventListener('keyup', e => heldKeys.delete(e.code || e.key));
+  addEventListener('blur', () => heldKeys.clear());
+
   document.addEventListener('keydown', e => {
     const overlay = document.getElementById('settings-overlay');
     if (!overlay.hidden) {
@@ -1276,7 +1300,14 @@
     if (e.key === 'Escape')    { e.preventDefault(); clearAll(); return; }
 
     // Held keys would flood the display and the speech queue; arrows may repeat.
-    if (e.repeat && !e.key.startsWith('Arrow')) return;
+    // e.repeat alone isn't enough — some keyboards/OSes never set it — so track
+    // what is physically down as well.
+    const isArrow = e.key.startsWith('Arrow');
+    const code = e.code || e.key;
+    if (!isArrow) {
+      if (e.repeat || heldKeys.has(code)) return;
+      heldKeys.add(code);
+    }
 
     if (tab === 'emoji') {
       if (emojiKeys && emojiKeys.handleKey(e)) e.preventDefault();
