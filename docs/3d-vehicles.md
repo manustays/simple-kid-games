@@ -24,6 +24,31 @@ deleted. The sections below document both, since they are still in the code.
 6. Tapping the name label re-speaks the name. ◀ / ▶ step to the adjacent vehicle; ↩ returns to the
    grid.
 
+## Keyboard (laptop use)
+
+One global `keydown` handler covers both screens, so the whole activity is playable without a
+pointer.
+
+| Key | Viewer open | Grid screen |
+|-----|-------------|-------------|
+| Arrows | rotate (yaw ← →, pitch ↑ ↓), stops the auto-spin | ignored |
+| `Escape` | back to the grid | ignored |
+| `Space` / `Enter` | next vehicle in roster order, wraps (same as ▶) | opens the last-viewed vehicle (Bus on cold start) |
+| a–z | opens a random vehicle whose **name** starts with that letter | same |
+| digit, punctuation, unmatched letter | opens a random vehicle | same |
+
+Details worth knowing before changing it:
+
+- `pickVehicle()` matches on the visible `name`, not `id` — note `id: 'suv'` is named *Jeep* and
+  `id: 'jeep'` is named *SUV*.
+- It avoids re-picking the vehicle already open, but only when another candidate matches, so `v`
+  on an open Van still reopens the Van rather than jumping somewhere unrelated.
+- `key.length === 1` is the "printable key" test: it covers letters, digits and punctuation while
+  leaving `Tab`, `Shift` and the F-keys alone. Any event with `ctrlKey`/`metaKey`/`altKey` is
+  ignored so browser shortcuts (Cmd+R, Alt+Tab) still work.
+- `e.repeat` is ignored for everything except the arrows — a held letter would otherwise stack
+  model loads and speech utterances.
+
 ## File layout
 
 ```

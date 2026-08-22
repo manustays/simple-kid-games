@@ -262,16 +262,42 @@
     });
     canvas.addEventListener('pointerup', (e) => { if (e.pointerId === dragId) dragId = null; });
     canvas.addEventListener('pointercancel', (e) => { if (e.pointerId === dragId) dragId = null; });
+    /**
+     * Pick a vehicle index for a keyboard jump.
+     * @param {string|null} letter Lowercase letter typed, or null for "anything".
+     * @returns {number} Index into VEHICLES; avoids the open vehicle when another candidate exists.
+     */
+    function pickVehicle(letter) {
+      const all = VEHICLES.map((_, i) => i);
+      const hits = letter ? all.filter(i => VEHICLES[i].name[0].toLowerCase() === letter) : [];
+      const pool = hits.length ? hits : all;
+      // only skip the open one when something else matches, so 'v' on an open Van reopens the Van
+      const fresh = viewerActive ? pool.filter(i => i !== current) : pool;
+      const from = fresh.length ? fresh : pool;
+      return from[Math.floor(Math.random() * from.length)];
+    }
     addEventListener('keydown', (e) => {
-      if (!viewerActive) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return; // leave Cmd+R, Alt+Tab etc. alone
       const k = e.key;
-      if (k === 'ArrowLeft') spinner.rotation.y -= 0.09;
-      else if (k === 'ArrowRight') spinner.rotation.y += 0.09;
-      else if (k === 'ArrowUp') pivot.rotation.x = Math.max(-PITCH_MAX, pivot.rotation.x - 0.05);
-      else if (k === 'ArrowDown') pivot.rotation.x = Math.min(PITCH_MAX, pivot.rotation.x + 0.05);
-      else return;
+      if (viewerActive && k.startsWith('Arrow')) {
+        if (k === 'ArrowLeft') spinner.rotation.y -= 0.09;
+        else if (k === 'ArrowRight') spinner.rotation.y += 0.09;
+        else if (k === 'ArrowUp') pivot.rotation.x = Math.max(-PITCH_MAX, pivot.rotation.x - 0.05);
+        else pivot.rotation.x = Math.min(PITCH_MAX, pivot.rotation.x + 0.05);
+        markInteract();
+      } else if (e.repeat) {
+        return; // a held key must not stack model loads and speech; arrows above still repeat
+      } else if (k === 'Escape') {
+        if (!viewerActive) return;
+        popTone(); closeViewer();
+      } else if (k === ' ' || k === 'Enter') {
+        popTone(); openVehicle(viewerActive ? current + 1 : current);
+      } else if (k.length === 1) {
+        popTone(); openVehicle(pickVehicle(/[a-z]/i.test(k) ? k.toLowerCase() : null));
+      } else {
+        return; // Tab, Shift, F-keys: untouched
+      }
       e.preventDefault();
-      markInteract();
     });
     frameHooks.push((dt) => { if (autoSpin) spinner.rotation.y += dt * 0.35; });
 
